@@ -251,9 +251,11 @@ function find_media_files(string $feedDir): array {
 }
 
 function discover_image(string $feedDir): ?string {
-    // Per-podcast artwork: require a single canonical filename in the podcast root.
-    $p = $feedDir . DIRECTORY_SEPARATOR . 'cover.jpg';
-    if (is_file($p) && is_readable($p)) return $p;
+    // Per-podcast artwork: check common filenames in priority order.
+    foreach (['cover.jpg', 'cover.png', 'folder.jpg', 'folder.png'] as $candidate) {
+        $p = $feedDir . DIRECTORY_SEPARATOR . $candidate;
+        if (is_file($p) && is_readable($p)) return $p;
+    }
     return null;
 }
 
