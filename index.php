@@ -293,7 +293,7 @@ function media_url(string $feed, string $relPath): string {
     ]);
 }
 
-function send_rss(string $feed, string $feedDir): void {
+function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void {
     $base = base_url();
     $self = $base . '?' . http_build_query(['feed' => $feed]);
     $name = basename($feed);
@@ -330,7 +330,7 @@ function send_rss(string $feed, string $feedDir): void {
     // Required by Apple Podcasts
     echo "    <itunes:author>" . h($name) . "</itunes:author>\n";
     echo "    <itunes:explicit>false</itunes:explicit>\n";
-    echo "    <itunes:category text=\"Fiction\" />\n";
+    echo "    <itunes:category text=\"" . h($type === 'book' ? 'Fiction' : 'Society &amp; Culture') . "\" />\n";
     echo "    <itunes:summary>" . h("Podcast feed for {$name}") . "</itunes:summary>\n";
     if ($imgUrl !== null) {
         // Standard RSS image block
@@ -518,7 +518,8 @@ if ($feed !== '') {
         echo "Unknown feed";
         exit;
     }
-    send_rss($feed, $feedDir);
+    $feedType = str_starts_with($feed, BOOKS_SUBDIR . '/') ? 'book' : 'podcast';
+    send_rss($feed, $feedDir, $feedType);
     exit;
 }
 
