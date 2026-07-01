@@ -806,12 +806,10 @@ header('Content-Type: text/html; charset=UTF-8');
           $newestIso = $newestTs !== null ? gmdate('Y-m-d', $newestTs) : null;
           $newestHuman = $newestTs !== null ? human_age($newestTs) : null;
 
-          $coverUrl = null;
-          $coverPath = $f['dir'] . DIRECTORY_SEPARATOR . 'cover.jpg';
-          if (is_file($coverPath) && is_readable($coverPath)) {
-            $coverUrl = media_url($f['id'], 'cover.jpg');
-          }
-
+          $coverImgPath = discover_image($f['dir']);
+          $coverUrl = $coverImgPath !== null
+              ? media_url($f['id'], basename($coverImgPath))
+              : null;
           $badgeLabel = $f['type'] === 'book' ? '📚 Audio Book' : '🎙 Podcast';
           $badgeClass = $f['type'] === 'book' ? 'book' : 'podcast';
         ?>
