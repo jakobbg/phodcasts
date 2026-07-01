@@ -419,6 +419,14 @@ function stream_file(string $feed, string $feedDir, string $rel): void {
     header('Content-Type: ' . $mime);
     header('Accept-Ranges: bytes');
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', (int)$mtime) . ' GMT');
+    $etag = '"' . sha1($realAbs . '|' . $mtime . '|' . $size) . '"';
+    header('ETag: ' . $etag);
+
+    $inm = (string)($_SERVER['HTTP_IF_NONE_MATCH'] ?? '');
+    if ($inm !== '' && $inm === $etag) {
+        http_response_code(304);
+        return;
+    }
 
     $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 
