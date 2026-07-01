@@ -245,6 +245,8 @@ function find_media_files(string $feedDir): array {
     }
     unset($f);
 
+    usort($files, fn($a, $b) => $b['sort_ts'] <=> $a['sort_ts']);
+
     return $files;
 }
 
