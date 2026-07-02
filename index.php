@@ -238,9 +238,16 @@ function find_media_files(string $feedDir, string $type = 'podcast'): array {
     // Use a base date far in the past and step forward one day per episode.
     $syntheticBase = mktime(12, 0, 0, 1, 1, 2000);
     $syntheticStep = 86400; // one day per episode
+    $fileCount = count($files);
     foreach ($files as $i => &$f) {
         if ($f['pub_ts'] === null) {
-            $f['pub_ts'] = $syntheticBase + $i * $syntheticStep;
+            // Books: assign DESCENDING timestamps so that podcast apps, which
+            // always sort by pubDate newest-first, end up presenting track 1
+            // first (highest timestamp) and the last track last.
+            // Podcasts: ascending timestamps keep the oldest episode oldest.
+            $f['pub_ts'] = $type === 'book'
+                ? $syntheticBase + ($fileCount - 1 - $i) * $syntheticStep
+                : $syntheticBase + $i * $syntheticStep;
             $f['sort_ts'] = $f['pub_ts'];
         }
     }
