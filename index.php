@@ -718,6 +718,26 @@ function stream_file(string $feed, string $feedDir, string $rel): void {
 $action = (string)($_GET['action'] ?? '');
 $feed = (string)($_GET['feed'] ?? '');
 
+if ($action === 'img') {
+    // Serve known static image assets (fallback if the web server doesn't handle .png directly)
+    $allowed = ['logo.png', 'og.png', 'apple-touch-icon.png', 'favicon.png'];
+    $name = basename((string)($_GET['name'] ?? ''));
+    if (!in_array($name, $allowed, true)) {
+        http_response_code(404);
+        exit;
+    }
+    $imgPath = __DIR__ . DIRECTORY_SEPARATOR . $name;
+    if (!is_file($imgPath) || !is_readable($imgPath)) {
+        http_response_code(404);
+        exit;
+    }
+    header('Content-Type: image/png');
+    header('Cache-Control: public, max-age=31536000, immutable');
+    header('ETag: "' . hash_file('xxh32', $imgPath) . '"');
+    readfile($imgPath);
+    exit;
+}
+
 if ($action === 'media') {
     $feedDir = resolve_feed_dir($feed);
     if ($feedDir === null) {
@@ -750,6 +770,11 @@ if (!in_array($filter, $allowedFilters, true)) $filter = 'all';
 
 $feeds = list_podcasts($filter);
 $base = base_url();
+// Asset base: strip the script filename, leaving the directory URL with trailing slash
+$assetBase = substr($base, 0, strrpos($base, '/') + 1);
+$ogImageUrl     = $assetBase . 'og.png';
+$iconUrl        = $assetBase . 'apple-touch-icon.png';
+$faviconUrl     = $assetBase . 'favicon.png';
 header('Content-Type: text/html; charset=UTF-8');
 
 ?><!doctype html>
@@ -758,7 +783,31 @@ header('Content-Type: text/html; charset=UTF-8');
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Podcast &amp; Audiobook Feeds</title>
+  <title>phodcasts</title>
+
+  <!-- Favicon & home-screen icon -->
+  <link rel="icon" type="image/png" href="<?= h($faviconUrl) ?>">
+  <link rel="apple-touch-icon" href="<?= h($iconUrl) ?>">
+  <meta name="apple-mobile-web-app-title" content="phodcasts">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Open Graph — iMessage / Slack / Discord link previews -->
+  <meta property="og:type"        content="website">
+  <meta property="og:site_name"   content="phodcasts">
+  <meta property="og:title"       content="phodcasts">
+  <meta property="og:description" content="Your podcasts &amp; audiobooks, streamed from your own server.">
+  <meta property="og:url"         content="<?= h($base) ?>">
+  <meta property="og:image"       content="<?= h($ogImageUrl) ?>">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type"  content="image/png">
+
+  <!-- Twitter / X card (also used by some other clients) -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="phodcasts">
+  <meta name="twitter:description" content="Your podcasts &amp; audiobooks, streamed from your own server.">
+  <meta name="twitter:image"       content="<?= h($ogImageUrl) ?>">
   <style>
     :root {
       --bg: #0b1220;

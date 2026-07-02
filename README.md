@@ -13,6 +13,7 @@ Intended for self-hosters who have downloaded podcasts or ripped audiobooks to a
 - Picks up `cover.jpg` / `cover.png` / `folder.jpg` / `folder.png` as podcast artwork
 - Works correctly behind a reverse proxy (respects `X-Forwarded-Proto` / `X-Forwarded-Host`)
 - **Cleans up episode titles** automatically — raw filenames are transformed into readable labels before they appear in your podcast app (see [Episode title cleanup](#episode-title-cleanup))
+- **Rich link previews** — Open Graph and Twitter Card meta tags make shared links look great in iMessage, Slack, Discord, etc. Includes an `apple-touch-icon` for adding the page to the iOS home screen
 
 ## Requirements
 
@@ -43,6 +44,10 @@ PODCAST_ROOT/
     └── Some Audiobook/
         └── 01-chapter.m4b
 ```
+
+4. Place the provided image files (`logo.png`, `og.png`, `apple-touch-icon.png`,
+   `favicon.png`) in the same directory as `index.php` so that link previews
+   and browser icons work out of the box. The web server serves them directly.
 
 Each immediate subfolder becomes one feed, accessible at `?feed=Podcasts/My+Show`.
 
