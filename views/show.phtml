@@ -375,12 +375,14 @@
         <?= $feedType === 'book' ? 'Audio Book' : 'Podcast' ?>
       </span>
 
-      <h1><?= h($displayTitle) ?></h1>
+      <h1 id="show-title"><?= h($displayTitle) ?></h1>
 
       <?php if ($meta !== null && !empty($meta['author'])): ?>
-        <p class="hero-sub"><?= h($meta['author']) ?><?php if (!empty($meta['year'])): ?> · <?= (int)$meta['year'] ?><?php endif; ?></p>
+        <p id="show-author" class="hero-sub"><?= h($meta['author']) ?><?php if (!empty($meta['year'])): ?> · <?= (int)$meta['year'] ?><?php endif; ?></p>
       <?php elseif ($feedType === 'podcast'): ?>
         <p class="hero-sub"><?= h($name) ?></p>
+      <?php elseif ($metaFetchUrl !== null): ?>
+        <p id="show-author" class="hero-sub" style="opacity:.45">Loading…</p>
       <?php endif; ?>
 
       <div class="stats">
@@ -418,14 +420,20 @@
     </div>
   </div>
 
-  <?php if ($notes !== null || ($meta !== null && !empty($meta['description']))): ?>
+  <?php
+    $hasDesc  = $notes !== null || ($meta !== null && !empty($meta['description']));
+    $willFetch = isset($metaFetchUrl) && $metaFetchUrl !== null && $notes === null;
+  ?>
+  <?php if ($hasDesc || $willFetch): ?>
   <div class="desc-card">
-    <h2><?= $notes !== null ? 'Notes' : 'About' ?></h2>
+    <h2 id="desc-heading"><?= $notes !== null ? 'Notes' : 'About' ?></h2>
     <div class="desc-body">
       <?php if ($notes !== null): ?>
         <?= $notes ?>
       <?php elseif ($meta !== null && !empty($meta['description'])): ?>
         <p><?= h((string)$meta['description']) ?></p>
+      <?php elseif ($willFetch): ?>
+        <p id="desc-loading" style="color:var(--muted);font-size:14px">Loading description…</p>
       <?php endif; ?>
     </div>
   </div>
@@ -502,6 +510,71 @@
     <button id="player-auto" class="player-auto-btn" aria-label="Auto-advance: off" aria-pressed="false">&#x21E5; Auto</button>
   </div>
 </div>
+
+<?php if (isset($metaFetchUrl) && $metaFetchUrl !== null && $notes === null): ?>
+<script>
+(function () {
+  var url = '<?= h($metaFetchUrl) ?>';
+  fetch(url)
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (d) {
+      if (d.found) {
+        // Update title
+        if (d.title) {
+          var h1 = document.getElementById('show-title');
+          if (h1) h1.textContent = d.title;
+          document.title = d.title + ' \u2013 phodcasts';
+        }
+        // Update / create author-year line
+        if (d.author) {
+          var sub = document.getElementById('show-author');
+          var txt = d.author + (d.year ? ' \u00b7 ' + d.year : '');
+          if (sub) {
+            sub.textContent = txt;
+            sub.style.opacity = '';
+          } else {
+            var h1b = document.getElementById('show-title');
+            if (h1b) {
+              var p = document.createElement('p');
+              p.id = 'show-author'; p.className = 'hero-sub';
+              p.textContent = txt;
+              h1b.insertAdjacentElement('afterend', p);
+            }
+          }
+        } else {
+          var sub2 = document.getElementById('show-author');
+          if (sub2) sub2.remove();
+        }
+        // Update description
+        var loader = document.getElementById('desc-loading');
+        if (loader) {
+          if (d.description) {
+            var p2 = document.createElement('p');
+            p2.textContent = d.description;
+            loader.replaceWith(p2);
+            var heading = document.getElementById('desc-heading');
+            if (heading) heading.textContent = 'About';
+          } else {
+            loader.closest('.desc-card').style.display = 'none';
+          }
+        }
+      } else {
+        // No match: remove loading state
+        var loader2 = document.getElementById('desc-loading');
+        if (loader2) loader2.closest('.desc-card').style.display = 'none';
+        var sub3 = document.getElementById('show-author');
+        if (sub3 && sub3.textContent.includes('Loading')) sub3.remove();
+      }
+    })
+    .catch(function () {
+      var loader3 = document.getElementById('desc-loading');
+      if (loader3) loader3.closest('.desc-card').style.display = 'none';
+      var sub4 = document.getElementById('show-author');
+      if (sub4 && sub4.textContent.includes('Loading')) sub4.remove();
+    });
+}());
+</script>
+<?php endif; ?>
 
 <script>
 /* Audio player for the feed detail page.

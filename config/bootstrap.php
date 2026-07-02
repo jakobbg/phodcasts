@@ -12,5 +12,6 @@ require_once __DIR__ . '/../src/title/library.php';
 require_once __DIR__ . '/../src/handlers/rss.php';
 require_once __DIR__ . '/../src/handlers/media.php';
 require_once __DIR__ . '/../src/handlers/assets.php';
+require_once __DIR__ . '/../src/handlers/metadatajson.php';
 require_once __DIR__ . '/../src/handlers/showpage.php';
 require_once __DIR__ . '/../src/handlers/indexpage.php';
