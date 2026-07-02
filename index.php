@@ -848,6 +848,7 @@ header('Content-Type: text/html; charset=UTF-8');
         radial-gradient(1200px 500px at 10% 0%, rgba(124,58,237,.35), transparent 60%),
         radial-gradient(900px 500px at 90% 10%, rgba(6,182,212,.25), transparent 55%),
         linear-gradient(180deg, var(--bg), var(--bg2));
+      background-attachment: fixed;
     }
 
     a { color: inherit; text-decoration: none; }
