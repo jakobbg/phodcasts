@@ -1074,7 +1074,12 @@ header('Content-Type: text/html; charset=UTF-8');
       <div class="grid">
         <?php foreach ($feeds as $f):
           $rss = $base . '?' . http_build_query(['feed' => $f['id']]);
-          $podcastUrl = preg_replace('#^https?://#i', 'podcast://', $rss);
+          // pcast:// (HTTP) and itms-pcast:// (HTTPS) are the long-established
+          // Apple Podcasts subscribe schemes. The newer podcast:// scheme can
+          // silently drop the URL on some macOS/browser combinations.
+          $podcastUrl = str_starts_with($rss, 'https://')
+              ? 'itms-pcast://' . substr($rss, 8)
+              : 'pcast://'      . substr($rss, 7);
 
           $stats = podcast_stats($f['dir']);
           $episodeCount = (int)$stats['count'];
