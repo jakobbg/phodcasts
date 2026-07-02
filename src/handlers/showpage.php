@@ -54,9 +54,19 @@ function render_show_page(string $feed): void {
     $assetBase = substr($base, 0, strrpos($base, '/') + 1);
 
     // Open Library metadata (books only, when enabled).
-    $meta = null;
+    // Only reads the local cache — no blocking network request.
+    // If no cache entry exists yet, $metaFetchUrl tells the view to fetch async.
+    $meta         = null;
+    $metaFetchUrl = null;
     if ($feedType === 'book' && FETCH_BOOK_METADATA) {
-        $meta = fetch_book_metadata($feed, $name);
+        $cached = load_metadata_cache($feed);
+        if ($cached !== null && !empty($cached['found'])) {
+            $meta = $cached;          // warm cache — instant
+        } elseif ($cached === null) {
+            // Cold cache — let the browser fetch in the background
+            $metaFetchUrl = $base . '?' . http_build_query(['action' => 'meta', 'feed' => $feed]);
+        }
+        // cached['found'] === false: Open Library returned no match, don't retry
     }
 
     // Optional notes.md in the feed directory.

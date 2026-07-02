@@ -27,6 +27,11 @@ if ($action === 'media') {
     exit;
 }
 
+if ($action === 'meta') {
+    send_metadata_json($feed);
+    exit;
+}
+
 if ($feed !== '') {
     $feedDir = resolve_feed_dir($feed);
     if ($feedDir === null) {
