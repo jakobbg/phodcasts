@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Route clean feed paths to index.php so podcast:// URLs have no query strings.
+# Apple Podcasts (and other apps) receive  http://host/feed/Podcasts/MyShow
+# which is far more reliably passed through browser → OS → app than a URL
+# that carries a ?feed=... query string.
+# The B flag re-encodes the backreference so spaces/Unicode from the URL-decoded
+# path don't land as literal spaces in the query string (Apache rejects those).
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^feed/(.+)$ index.php?feed=$1 [L,QSA,B]

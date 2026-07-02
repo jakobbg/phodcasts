@@ -1077,10 +1077,13 @@ header('Content-Type: text/html; charset=UTF-8');
       <div class="grid">
         <?php foreach ($feeds as $f):
           $rss = $base . '?' . http_build_query(['feed' => $f['id']]);
-          // podcast:// replaces https:// so Apple Podcasts reconstructs the feed URL.
-          // Opened via JS (onclick) rather than href so the browser never tries to
-          // navigate to the custom scheme — avoiding "invalid address" errors.
-          $podcastUrl = preg_replace('#^https?://#i', 'podcast://', $rss);
+          // Build a clean path URL (no query string) for the podcast:// scheme.
+          // Browsers pass custom URL schemes to the OS far more reliably when
+          // the URL is a simple path — query strings are routinely dropped by
+          // Chrome and others before handing off to the native app handler.
+          $encodedId   = implode('/', array_map('rawurlencode', explode('/', $f['id'])));
+          $cleanFeedUrl = $assetBase . 'feed/' . $encodedId;
+          $podcastUrl   = preg_replace('#^https?://#i', 'podcast://', $cleanFeedUrl);
 
           $stats = podcast_stats($f['dir']);
           $episodeCount = (int)$stats['count'];
@@ -1107,7 +1110,7 @@ header('Content-Type: text/html; charset=UTF-8');
             </div>
             <div class="actions">
               <button type="button" class="btn" onclick="copyFeed(this,'<?php echo h(addslashes($rss)); ?>')" aria-label="Copy RSS feed URL for <?php echo h($f['name']); ?>">Copy RSS</button>
-              <button type="button" class="btn primary" onclick="openPodcasts('<?php echo h(addslashes($podcastUrl)); ?>')" aria-label="Open <?php echo h($f['name']); ?> in Apple Podcasts">Apple Podcasts</button>
+              <a href="<?php echo h($podcastUrl); ?>" class="btn primary" aria-label="Open <?php echo h($f['name']); ?> in Apple Podcasts">Apple Podcasts</a>
             </div>
           </section>
         <?php endforeach; ?>
@@ -1119,15 +1122,6 @@ header('Content-Type: text/html; charset=UTF-8');
   </div>
 
 <script>
-function openPodcasts(url) {
-  var a = document.createElement("a");
-  a.href = url;
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
 function copyFeed(btn, url) {
   if (!navigator.clipboard) {
     prompt("Copy this feed URL:", url);
