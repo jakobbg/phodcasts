@@ -26,12 +26,21 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     header('Cache-Control: no-cache, no-store, must-revalidate');
     send_security_headers('rss');
 
+    // Enrich audiobook feeds with a description from Open Library when enabled.
+    $feedDesc = "Podcast feed for {$name}";
+    if ($type === 'book' && FETCH_BOOK_METADATA) {
+        $bookMeta = fetch_book_metadata($feed, $name);
+        if ($bookMeta !== null && !empty($bookMeta['description'])) {
+            $feedDesc = (string)$bookMeta['description'];
+        }
+    }
+
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     echo "<rss version=\"2.0\" xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n";
     echo "  <channel>\n";
     echo "    <title>" . h($name) . "</title>\n";
     echo "    <link>" . h($base) . "</link>\n";
-    echo "    <description>" . h("Podcast feed for {$name}") . "</description>\n";
+    echo "    <description>" . h($feedDesc) . "</description>\n";
     echo "    <language>" . h(FEED_LANGUAGE) . "</language>\n";
     echo "    <lastBuildDate>" . gmdate(DATE_RSS, $lastBuild) . "</lastBuildDate>\n";
     echo "    <generator>phodcasts</generator>\n";
@@ -40,7 +49,7 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     echo "    <itunes:author>" . h($name) . "</itunes:author>\n";
     echo "    <itunes:explicit>false</itunes:explicit>\n";
     echo "    <itunes:category text=\"" . h($type === 'book' ? 'Fiction' : 'Society &amp; Culture') . "\" />\n";
-    echo "    <itunes:summary>" . h("Podcast feed for {$name}") . "</itunes:summary>\n";
+    echo "    <itunes:summary>" . h($feedDesc) . "</itunes:summary>\n";
     if ($imgUrl !== null) {
         // Standard RSS image block
         echo "    <image>\n";

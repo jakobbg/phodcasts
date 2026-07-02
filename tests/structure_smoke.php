@@ -9,6 +9,7 @@ $requiredPaths = [
     'src/utils/web.php',
     'src/utils/media.php',
     'src/feed/library.php',
+    'src/feed/metadata.php',
     'src/title/library.php',
     'src/handlers/rss.php',
     'src/handlers/media.php',
