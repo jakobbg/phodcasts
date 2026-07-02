@@ -393,7 +393,7 @@
           title="<?= h($versionTip) ?>"
           style="cursor:pointer"
           aria-label="<?= h($versionTip) ?>, click to copy commit link"
-          >phodcasts <span style="font-weight:400;opacity:.6">&mdash; Podcast &amp; Audiobook Feeds</span></h1>
+          ><span id="app-brand">phodcasts</span> <span style="font-weight:400;opacity:.6">&mdash; Podcast &amp; Audiobook Feeds</span></h1>
       <p class="sub">Podcasts in <code><?php echo h(PODCAST_ROOT . '/' . PODCASTS_SUBDIR); ?></code> &middot; Audio Books in <code><?php echo h(PODCAST_ROOT . '/' . BOOKS_SUBDIR); ?></code></p>
     </header>
 
@@ -521,9 +521,14 @@ function copyFeed(btn, url) {
       if (!url) return;
       if (!navigator.clipboard) { prompt('Commit URL:', url); return; }
       navigator.clipboard.writeText(url).then(function () {
-        var orig = titleEl.getAttribute('title');
-        titleEl.setAttribute('title', 'Copied!');
-        setTimeout(function () { titleEl.setAttribute('title', orig); }, 2000);
+        var brand = document.getElementById('app-brand');
+        var origText  = brand ? brand.textContent : '';
+        var origTitle = titleEl.getAttribute('title');
+        if (brand) brand.textContent = 'Copied!';
+        setTimeout(function () {
+          if (brand) brand.textContent = origText;
+          titleEl.setAttribute('title', origTitle);
+        }, 2000);
       });
     });
   }
