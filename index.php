@@ -1074,12 +1074,10 @@ header('Content-Type: text/html; charset=UTF-8');
       <div class="grid">
         <?php foreach ($feeds as $f):
           $rss = $base . '?' . http_build_query(['feed' => $f['id']]);
-          // pcast:// (HTTP) and itms-pcast:// (HTTPS) are the long-established
-          // Apple Podcasts subscribe schemes. The newer podcast:// scheme can
-          // silently drop the URL on some macOS/browser combinations.
-          $podcastUrl = str_starts_with($rss, 'https://')
-              ? 'itms-pcast://' . substr($rss, 8)
-              : 'pcast://'      . substr($rss, 7);
+          // podcast:// replaces https:// so Apple Podcasts reconstructs the feed URL.
+          // Opened via JS (onclick) rather than href so the browser never tries to
+          // navigate to the custom scheme — avoiding "invalid address" errors.
+          $podcastUrl = preg_replace('#^https?://#i', 'podcast://', $rss);
 
           $stats = podcast_stats($f['dir']);
           $episodeCount = (int)$stats['count'];
@@ -1105,8 +1103,8 @@ header('Content-Type: text/html; charset=UTF-8');
               <?php echo (int)$episodeCount; ?> episodes<?php if ($newestHuman !== null): ?> &middot; <span title="<?php echo h((string)$newestIso); ?>">Newest: <?php echo h($newestHuman); ?></span><?php endif; ?>
             </div>
             <div class="actions">
-              <a class="btn" href="<?php echo h($rss); ?>" aria-label="RSS feed for <?php echo h($f['name']); ?>">Feed</a>
-              <a class="btn primary" href="<?php echo h($podcastUrl); ?>" aria-label="Open <?php echo h($f['name']); ?> in Apple Podcasts">Apple Podcasts</a>
+              <button type="button" class="btn" onclick="copyFeed(this,'<?php echo h(addslashes($rss)); ?>')" aria-label="Copy RSS feed URL for <?php echo h($f['name']); ?>">Copy RSS</button>
+              <button type="button" class="btn primary" onclick="openPodcasts('<?php echo h(addslashes($podcastUrl)); ?>')" aria-label="Open <?php echo h($f['name']); ?> in Apple Podcasts">Apple Podcasts</button>
             </div>
           </section>
         <?php endforeach; ?>
@@ -1114,7 +1112,30 @@ header('Content-Type: text/html; charset=UTF-8');
     <?php endif; ?>
 
     <div class="divider"></div>
-    <p class="footer">Tip: On desktop, right-click “Feed” → copy link address, then paste into your podcast app’s “Add by URL”. On iOS, tap “Apple Podcasts”.</p>
+    <p class="footer">Tap <strong>Apple Podcasts</strong> to subscribe directly. Use <strong>Copy RSS</strong> to paste the feed URL into any other podcast app.</p>
   </div>
+
+<script>
+function openPodcasts(url) {
+  var a = document.createElement("a");
+  a.href = url;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function copyFeed(btn, url) {
+  if (!navigator.clipboard) {
+    prompt("Copy this feed URL:", url);
+    return;
+  }
+  navigator.clipboard.writeText(url).then(function () {
+    var orig = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(function () { btn.textContent = orig; }, 2000);
+  });
+}
+</script>
 </body>
 </html>
