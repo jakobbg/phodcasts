@@ -162,6 +162,24 @@ function media_url(string $feed, string $relPath): string {
 }
 
 /**
+ * Returns the full SHA of the current git HEAD, or '' if .git is unavailable.
+ * Result is cached per-process.
+ */
+function app_commit_hash(): string {
+    static $hash = null;
+    if ($hash !== null) return $hash;
+    $git  = __DIR__ . '/../../.git';
+    $head = @file_get_contents($git . '/HEAD');
+    if ($head === false) return $hash = '';
+    $head = trim($head);
+    if (str_starts_with($head, 'ref: ')) {
+        $ref = @file_get_contents($git . '/' . substr($head, 5));
+        $head = $ref !== false ? trim($ref) : '';
+    }
+    return $hash = (preg_match('/^[0-9a-f]{40}$/', $head) ? $head : '');
+}
+
+/**
  * Return an inline SVG that acts as a cover-art placeholder when no image is
  * available.  The full show name is rendered as wrapped text over a vivid
  * radial gradient.  Both hue and the second gradient stop are derived

@@ -383,7 +383,17 @@
   <a href="#main-content" class="skip-link">Skip to main content</a>
   <div class="wrap">
     <header class="hero">
-      <h1 title="phodcasts v1.0">phodcasts <span style="font-weight:400;opacity:.6">&mdash; Podcast &amp; Audiobook Feeds</span></h1>
+      <?php
+        $commitHash = app_commit_hash();
+        $shortHash  = $commitHash !== '' ? substr($commitHash, 0, 7) : '';
+        $versionTip = 'phodcasts ' . APP_VERSION . ($shortHash !== '' ? ' (' . $shortHash . ')' : '');
+        $commitUrl  = REPO_URL . ($commitHash !== '' ? '/commit/' . $commitHash : '');
+      ?>
+      <h1 id="app-title"
+          title="<?= h($versionTip) ?>"
+          style="cursor:pointer"
+          aria-label="<?= h($versionTip) ?>, click to copy commit link"
+          >phodcasts <span style="font-weight:400;opacity:.6">&mdash; Podcast &amp; Audiobook Feeds</span></h1>
       <p class="sub">Podcasts in <code><?php echo h(PODCAST_ROOT . '/' . PODCASTS_SUBDIR); ?></code> &middot; Audio Books in <code><?php echo h(PODCAST_ROOT . '/' . BOOKS_SUBDIR); ?></code></p>
     </header>
 
@@ -502,6 +512,22 @@ function copyFeed(btn, url) {
     setTimeout(function () { btn.textContent = orig; btn.setAttribute('aria-label', origLabel); }, 2000);
   });
 }
+(function () {
+  // Copy GitHub commit URL when the app title is clicked.
+  var titleEl = document.getElementById('app-title');
+  if (titleEl) {
+    titleEl.addEventListener('click', function () {
+      var url = '<?= h($commitUrl) ?>';
+      if (!url) return;
+      if (!navigator.clipboard) { prompt('Commit URL:', url); return; }
+      navigator.clipboard.writeText(url).then(function () {
+        var orig = titleEl.getAttribute('title');
+        titleEl.setAttribute('title', 'Copied!');
+        setTimeout(function () { titleEl.setAttribute('title', orig); }, 2000);
+      });
+    });
+  }
+}());
 (function () {
   var inp = document.getElementById('feed-search');
   if (!inp) return;

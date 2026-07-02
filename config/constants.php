@@ -18,3 +18,6 @@ const FETCH_BOOK_METADATA = true;
 
 // Number of feeds shown per page on the index.
 const FEEDS_PER_PAGE = 9;
+
+const APP_VERSION = 'v1.0';
+const REPO_URL    = 'https://github.com/jakobbg/phodcasts';
