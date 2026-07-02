@@ -7,7 +7,16 @@ function render_index_page(string $filter): void {
         $filter = 'all';
     }
 
-    $feeds = list_podcasts($filter);
+    $feeds      = list_podcasts($filter);
+    $totalFeeds = count($feeds);
+
+    // Slice to the current page BEFORE the view loops so podcast_stats() only
+    // runs for the feeds actually being rendered.
+    $page       = max(1, (int)($_GET['page'] ?? 1));
+    $totalPages = $totalFeeds > 0 ? (int)ceil($totalFeeds / FEEDS_PER_PAGE) : 1;
+    $page       = min($page, $totalPages);
+    $feeds      = array_slice($feeds, ($page - 1) * FEEDS_PER_PAGE, FEEDS_PER_PAGE);
+
     $base = base_url();
     // Asset base: strip the script filename, leaving the directory URL with trailing slash
     $assetBase = substr($base, 0, strrpos($base, '/') + 1);
