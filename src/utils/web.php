@@ -172,7 +172,7 @@ function send_security_headers(string $context = 'html'): void {
         header('X-Frame-Options: SAMEORIGIN');
         // Minimal CSP: page uses only inline styles + inline script,
         // same-origin images and fetch targets, no plugins or objects.
-        header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'self'");
+        header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; media-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'self'");
         header('Referrer-Policy: same-origin');
         // Suppress search-engine indexing for a private media server.
         header('X-Robots-Tag: noindex, nofollow');
