@@ -16,5 +16,6 @@ function render_index_page(string $filter): void {
     $faviconUrl     = $assetBase . 'favicon.png';
 
     header('Content-Type: text/html; charset=UTF-8');
+    send_security_headers('html');
     require __DIR__ . '/../../views/index.phtml';
 }

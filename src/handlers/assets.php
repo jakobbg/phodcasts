@@ -16,8 +16,15 @@ function send_image_asset(string $baseDir, string $name): void {
         return;
     }
 
+    send_security_headers('asset');
+    $etag = '"' . hash_file('xxh32', $imgPath) . '"';
+    $inm  = (string)($_SERVER['HTTP_IF_NONE_MATCH'] ?? '');
     header('Content-Type: image/png');
     header('Cache-Control: public, max-age=31536000, immutable');
-    header('ETag: "' . hash_file('xxh32', $imgPath) . '"');
+    header('ETag: ' . $etag);
+    if ($inm !== '' && $inm === $etag) {
+        http_response_code(304);
+        return;
+    }
     readfile($imgPath);
 }
