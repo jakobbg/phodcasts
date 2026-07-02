@@ -1,3 +1,6 @@
 # Cached Open Library metadata (refreshed by deleting these files).
 cache/metadata/
 cache/episodes/
+
+# Per-feed notes written locally on the NAS — never tracked.
+**/notes.md
