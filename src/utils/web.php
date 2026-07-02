@@ -107,6 +107,8 @@ function base_url(): string {
     if ($path === '' || $path[0] !== '/') {
         $path = '/index.php';
     }
+    // Strip the script filename so URLs never contain index.php.
+    $path = rtrim(dirname($path), '/') . '/';
     return $scheme . '://' . $host . $path;
 }
 

@@ -35,7 +35,7 @@ try {
             'HTTP_HOST' => 'ignored.example.com',
             'SCRIPT_NAME' => '/index.php',
         ]),
-        'https://proxy.example.com/index.php'
+        'https://proxy.example.com/'
     );
 
     $assertSame(
@@ -47,7 +47,7 @@ try {
             'HTTP_HOST' => 'public.example.com',
             'SCRIPT_NAME' => '/index.php',
         ]),
-        'http://public.example.com/index.php'
+        'http://public.example.com/'
     );
 
     $assertSame(
@@ -57,7 +57,7 @@ try {
             'HTTP_HOST' => 'local.example.test',
             'SCRIPT_NAME' => '/app/index.php',
         ]),
-        'https://local.example.test/app/index.php'
+        'https://local.example.test/app/'
     );
 
     $assertSame(
@@ -65,7 +65,7 @@ try {
         $runBaseUrl([
             'SERVER_NAME' => 'fallback.local',
         ]),
-        'http://fallback.local/index.php'
+        'http://fallback.local/'
     );
 
     $_SERVER = [
@@ -75,7 +75,7 @@ try {
     $assertSame(
         'media url includes expected query fields',
         media_url('Podcasts/My Show', 'episode 01.mp3'),
-        'http://pod.local/index.php?action=media&feed=Podcasts%2FMy+Show&file=episode+01.mp3'
+        'http://pod.local/?action=media&feed=Podcasts%2FMy+Show&file=episode+01.mp3'
     );
 } finally {
     $_SERVER = $originalServer;
