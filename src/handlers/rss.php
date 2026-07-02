@@ -24,6 +24,7 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
 
     header('Content-Type: application/rss+xml; charset=UTF-8');
     header('Cache-Control: no-cache, no-store, must-revalidate');
+    send_security_headers('rss');
 
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     echo "<rss version=\"2.0\" xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n";
@@ -33,7 +34,7 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     echo "    <description>" . h("Podcast feed for {$name}") . "</description>\n";
     echo "    <language>" . h(FEED_LANGUAGE) . "</language>\n";
     echo "    <lastBuildDate>" . gmdate(DATE_RSS, $lastBuild) . "</lastBuildDate>\n";
-    echo "    <generator>index.php</generator>\n";
+    echo "    <generator>phodcasts</generator>\n";
     echo "    <atom:link href=\"" . h($self) . "\" rel=\"self\" type=\"application/rss+xml\" />\n";
     // Required by Apple Podcasts
     echo "    <itunes:author>" . h($name) . "</itunes:author>\n";

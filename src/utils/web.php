@@ -158,3 +158,28 @@ function media_url(string $feed, string $relPath): string {
         'file' => $relPath,
     ]);
 }
+
+/**
+ * Emit shared security headers appropriate for a given content type context.
+ * $context: 'html' | 'rss' | 'media' | 'asset'
+ */
+function send_security_headers(string $context = 'html'): void {
+    // Prevent MIME-type sniffing on all responses.
+    header('X-Content-Type-Options: nosniff');
+
+    if ($context === 'html') {
+        // Disallow framing by other origins.
+        header('X-Frame-Options: SAMEORIGIN');
+        // Minimal CSP: page uses only inline styles + inline script,
+        // same-origin images and fetch targets, no plugins or objects.
+        header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'self'");
+        header('Referrer-Policy: same-origin');
+        // Suppress search-engine indexing for a private media server.
+        header('X-Robots-Tag: noindex, nofollow');
+    }
+
+    if ($context === 'rss') {
+        // RSS feeds should not be indexed as web pages.
+        header('X-Robots-Tag: noindex, nofollow');
+    }
+}

@@ -37,6 +37,7 @@ function stream_file(string $feed, string $feedDir, string $rel): void {
 
     header('Content-Type: ' . $mime);
     header('Accept-Ranges: bytes');
+    send_security_headers('media');
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', (int)$mtime) . ' GMT');
     $etag = '"' . sha1($realAbs . '|' . $mtime . '|' . $size) . '"';
     header('ETag: ' . $etag);
