@@ -14,7 +14,7 @@
   if ($feedType === 'book' && $meta !== null && !empty($meta['author'])) {
       $ogParts[] = 'by ' . $meta['author'];
   }
-  $ogParts[] = $episodeCount . ' ' . ($feedType === 'book' ? 'chapters' : 'episodes');
+  $ogParts[] = $episodeCount . ' ' . ($feedType === 'book' ? ($episodeCount === 1 ? 'chapter' : 'chapters') : ($episodeCount === 1 ? 'episode' : 'episodes'));
   if ($totalDuration !== null) {
       $ogParts[] = format_duration($totalDuration) . ' total';
   }
@@ -331,7 +331,7 @@
       <div class="stats">
         <div class="stat">
           <span class="stat-val"><?= $episodeCount ?></span>
-          <span class="stat-lbl"><?= $feedType === 'book' ? 'Chapters' : 'Episodes' ?></span>
+          <span class="stat-lbl"><?= $feedType === 'book' ? ($episodeCount === 1 ? 'Chapter' : 'Chapters') : ($episodeCount === 1 ? 'Episode' : 'Episodes') ?></span>
         </div>
         <?php if ($totalDuration !== null): ?>
         <div class="stat">
@@ -378,7 +378,7 @@
 
   <div class="episodes-card">
     <div class="episodes-header">
-      <h2><?= $feedType === 'book' ? 'Chapters' : 'Episodes' ?></h2>
+      <h2><?= $feedType === 'book' ? ($episodeCount === 1 ? 'Chapter' : 'Chapters') : ($episodeCount === 1 ? 'Episode' : 'Episodes') ?></h2>
     </div>
     <div class="table-wrap">
       <table>

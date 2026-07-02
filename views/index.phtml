@@ -369,7 +369,7 @@
             <span class="type-badge <?php echo $badgeClass; ?>"><span aria-hidden="true"><?php echo $badgeEmoji; ?></span> <?php echo h($badgeLabel); ?></span>
             <h2 class="pod-title"><?php echo h($f['name']); ?></h2>
             <div class="meta">
-              <?php echo (int)$episodeCount; ?> episodes<?php if ($newestHuman !== null): ?> &middot; Newest: <time datetime="<?php echo h((string)$newestIso); ?>"><?php echo h($newestHuman); ?></time><?php endif; ?>
+              <?php echo (int)$episodeCount; ?> <?php echo $episodeCount === 1 ? 'episode' : 'episodes'; ?><?php if ($newestHuman !== null): ?> &middot; Newest: <time datetime="<?php echo h((string)$newestIso); ?>"><?php echo h($newestHuman); ?></time><?php endif; ?>
             </div>
             <div class="actions">
               <a href="<?php echo h($showUrl); ?>" class="btn" aria-label="View episodes for <?php echo h($f['name']); ?>">Details</a>
