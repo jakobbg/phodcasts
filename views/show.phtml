@@ -503,8 +503,282 @@
   </div>
 </div>
 
-<script defer src="<?= h($assetBase . 'js/player.js') ?>"></script>
-<script defer src="<?= h($assetBase . 'js/coverart.js') ?>"></script>
-<script defer src="<?= h($assetBase . 'js/clipboard.js') ?>"></script>
+<script>
+/* Audio player for the feed detail page.
+ * Handles play/pause, seek, ETag auto-advance, and the sticky player bar.
+ */
+var audio = document.getElementById('audio-el');
+var bar   = document.getElementById('player-bar');
+var playBtn  = document.getElementById('player-play');
+var seek  = document.getElementById('player-seek');
+var curEl = document.getElementById('player-cur');
+var durEl = document.getElementById('player-dur');
+var titleEl = document.getElementById('player-ep-title');
+var autoBtn = document.getElementById('player-auto');
+var activeBtn = null;
+var autoAdvance = false;
+
+var SVG_PLAY  = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+var SVG_PAUSE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+var SVG_PLAY_SM  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+var SVG_PAUSE_SM = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+
+function fmtTime(s) {
+  if (!isFinite(s) || s < 0) return '—';
+  s = Math.round(s);
+  var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(r).padStart(2,'0');
+  return m + ':' + String(r).padStart(2,'0');
+}
+
+function updateSeek() {
+  if (!audio.duration) return;
+  var pct = audio.currentTime / audio.duration * 100;
+  seek.value = pct;
+  seek.style.setProperty('--prog', pct + '%');
+  curEl.textContent = fmtTime(audio.currentTime);
+}
+
+function setPlaying(playing) {
+  playBtn.innerHTML = playing ? SVG_PAUSE : SVG_PLAY;
+  playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  if (activeBtn) {
+    activeBtn.innerHTML = playing ? SVG_PAUSE_SM : SVG_PLAY_SM;
+    activeBtn.classList.toggle('playing', playing);
+    activeBtn.setAttribute('aria-label', playing
+      ? 'Pause ' + activeBtn.dataset.title
+      : 'Play '  + activeBtn.dataset.title);
+  }
+}
+
+function playEpisode(btn) {
+  var src = btn.dataset.src, title = btn.dataset.title;
+  if (activeBtn === btn && !audio.paused) { audio.pause(); return; }
+  if (activeBtn && activeBtn !== btn) {
+    activeBtn.innerHTML = SVG_PLAY_SM;
+    activeBtn.classList.remove('playing');
+  }
+  activeBtn = btn;
+  titleEl.textContent = title;
+  if (audio.src !== src) {
+    audio.src = src;
+    audio.load();
+  }
+  audio.play();
+  bar.classList.add('open');
+  document.body.classList.add('player-open');
+}
+
+document.querySelectorAll('.ep-play').forEach(function(btn) {
+  btn.addEventListener('click', function() { playEpisode(btn); });
+});
+
+playBtn.addEventListener('click', function() {
+  if (audio.paused) audio.play(); else audio.pause();
+});
+
+audio.addEventListener('play',  function() { setPlaying(true); });
+audio.addEventListener('pause', function() { setPlaying(false); });
+audio.addEventListener('ended', function() {
+  if (autoAdvance && activeBtn) {
+    var allBtns = Array.from(document.querySelectorAll('.ep-play'));
+    var idx = allBtns.indexOf(activeBtn);
+    if (idx !== -1 && idx + 1 < allBtns.length) {
+      playEpisode(allBtns[idx + 1]);
+      return;
+    }
+  }
+  setPlaying(false);
+  seek.value = 0;
+  seek.style.setProperty('--prog', '0%');
+  curEl.textContent = '0:00';
+});
+audio.addEventListener('loadedmetadata', function() {
+  durEl.textContent = fmtTime(audio.duration);
+});
+audio.addEventListener('timeupdate', updateSeek);
+
+seek.addEventListener('input', function() {
+  if (audio.duration) {
+    audio.currentTime = seek.value / 100 * audio.duration;
+    seek.style.setProperty('--prog', seek.value + '%');
+  }
+});
+
+document.getElementById('player-close').addEventListener('click', function() {
+  audio.pause();
+  audio.src = '';
+  bar.classList.remove('open');
+  document.body.classList.remove('player-open');
+  if (activeBtn) {
+    activeBtn.innerHTML = SVG_PLAY_SM;
+    activeBtn.classList.remove('playing');
+    activeBtn = null;
+  }
+  seek.value = 0;
+  seek.style.setProperty('--prog', '0%');
+  curEl.textContent = '0:00';
+  durEl.textContent = '—';
+});
+
+autoBtn.addEventListener('click', function() {
+  autoAdvance = !autoAdvance;
+  autoBtn.classList.toggle('on', autoAdvance);
+  autoBtn.setAttribute('aria-pressed', autoAdvance ? 'true' : 'false');
+  autoBtn.setAttribute('aria-label', 'Auto-advance: ' + (autoAdvance ? 'on' : 'off'));
+});
+
+/* Cover-art colour theming for the feed detail page.
+ * Samples the dominant hue from the cover image and injects
+ * matching accent colours as a dynamic <style> block.
+ */
+(function () {
+  var coverImg = document.querySelector('img.cover');
+  if (!coverImg) return;
+
+  function rgbToHsl(r, g, b) {
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var l = (max + min) / 2, h = 0, s = 0;
+    if (max !== min) {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      if      (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (max === g) h = ((b - r) / d + 2) / 6;
+      else                h = ((r - g) / d + 4) / 6;
+    }
+    return [h * 360, s, l];
+  }
+
+  function extractHue(img) {
+    try {
+      var c = document.createElement('canvas');
+      c.width = c.height = 64;
+      var ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, 64, 64);
+      var d = ctx.getImageData(0, 0, 64, 64).data;
+      var buckets = new Float32Array(36);
+      for (var i = 0; i < d.length; i += 4) {
+        var hsl = rgbToHsl(d[i] / 255, d[i+1] / 255, d[i+2] / 255);
+        var s = hsl[1], l = hsl[2];
+        if (s < 0.18 || l < 0.07 || l > 0.93) continue;
+        buckets[Math.floor(hsl[0] / 10) % 36] += s * (1 - Math.abs(l - 0.5) * 1.4);
+      }
+      // Smooth across neighbouring buckets to avoid straddling two
+      var sm = new Float32Array(36);
+      for (var j = 0; j < 36; j++)
+        sm[j] = buckets[(j + 35) % 36] * 0.3 + buckets[j] + buckets[(j + 1) % 36] * 0.3;
+      var best = 0;
+      for (var j = 1; j < 36; j++) if (sm[j] > sm[best]) best = j;
+      return sm[best] > 0.5 ? best * 10 + 5 : null;
+    } catch (e) { return null; }
+  }
+
+  function applyHue(hue) {
+    var h2 = (hue + 40) % 360;
+    var light = window.matchMedia('(prefers-color-scheme: light)').matches;
+
+    var css = ':root{'
+      + '--accent:hsl('  + hue + ',70%,55%);'
+      + '--accent2:hsl(' + h2  + ',65%,52%)'
+      + '}';
+
+    if (!light) {
+      css += ':root{'
+        + '--bg:hsl('  + hue + ',35%,6%);'
+        + '--bg2:hsl(' + hue + ',30%,9%)'
+        + '}';
+      css += 'body{'
+        + 'background:'
+        +   'radial-gradient(1200px 500px at 10% 0%,hsla(' + hue + ',70%,45%,.38),transparent 60%),'
+        +   'radial-gradient(900px 500px at 90% 10%,hsla(' + h2  + ',65%,45%,.26),transparent 55%),'
+        +   'linear-gradient(180deg,hsl(' + hue + ',35%,6%),hsl(' + hue + ',30%,9%));'
+        + 'background-attachment:fixed'
+        + '}';
+      css += '#player-bar{background:hsla(' + hue + ',40%,7%,.95)}';
+    }
+
+    // Gradient buttons
+    css += '.btn.primary{'
+      + 'border-color:hsla(' + hue + ',70%,55%,.55);'
+      + 'background:linear-gradient(135deg,hsla(' + hue + ',70%,50%,.92),hsla(' + h2 + ',65%,48%,.72))'
+      + '}';
+    css += '.btn.primary:hover{'
+      + 'background:linear-gradient(135deg,hsl(' + hue + ',70%,50%),hsla(' + h2 + ',65%,48%,.85))'
+      + '}';
+
+    // Row play buttons
+    css += '.ep-play:hover{'
+      + 'background:hsla(' + hue + ',70%,50%,.3);'
+      + 'border-color:hsla(' + hue + ',70%,50%,.5)'
+      + '}';
+    css += '.ep-play.playing{background:hsla(' + hue + ',70%,50%,.85)}';
+
+    // Sticky player
+    css += '.player-btn{'
+      + 'background:linear-gradient(135deg,hsla(' + hue + ',70%,50%,.9),hsla(' + h2 + ',65%,48%,.7))'
+      + '}';
+    css += '.player-seek{'
+      + 'background:linear-gradient(to right,'
+      +   'hsl(' + hue + ',70%,55%) var(--prog,0%),'
+      +   'rgba(255,255,255,.18) var(--prog,0%))'
+      + '}';
+    css += '.player-auto-btn.on{'
+      + 'background:hsla(' + hue + ',70%,50%,.25);'
+      + 'border-color:hsla(' + hue + ',70%,55%,.5);'
+      + 'color:hsl(' + hue + ',80%,72%)'
+      + '}';
+
+    // Badges
+    css += '.type-badge.podcast,.type-badge.book{'
+      + 'background:hsla(' + hue + ',70%,55%,.2);'
+      + 'color:hsl(' + hue + ',80%,74%);'
+      + 'border-color:hsla(' + hue + ',70%,55%,.34)'
+      + '}';
+    css += '.fmt-badge{'
+      + 'background:hsla(' + hue + ',70%,55%,.18);'
+      + 'color:hsl(' + hue + ',80%,72%);'
+      + 'border-color:hsla(' + hue + ',70%,55%,.28)'
+      + '}';
+
+    // Description links / blockquotes
+    css += '.desc-body a{color:hsl(' + hue + ',80%,72%)}';
+    css += '.desc-body blockquote{border-left-color:hsl(' + hue + ',70%,55%);background:hsla(' + hue + ',70%,50%,.08)}';
+
+    var el = document.createElement('style');
+    el.id = 'cover-theme';
+    el.textContent = css;
+    document.head.appendChild(el);
+  }
+
+  function run() {
+    var hue = extractHue(coverImg);
+    if (hue !== null) applyHue(hue);
+  }
+
+  if (coverImg.complete && coverImg.naturalWidth > 0) run();
+  else coverImg.addEventListener('load', run);
+}());
+
+/* Clipboard copy with visual feedback for Copy RSS buttons.
+ * Called via onclick="copyFeed(this, url)" from the RSS copy buttons
+ * on both the index page and the feed detail page.
+ */
+function copyFeed(btn, url) {
+  if (!navigator.clipboard) {
+    prompt('Copy this feed URL:', url);
+    return;
+  }
+  navigator.clipboard.writeText(url).then(function () {
+    var orig = btn.textContent;
+    var origLabel = btn.getAttribute('aria-label');
+    btn.textContent = 'Copied!';
+    btn.setAttribute('aria-label', 'Copied to clipboard');
+    setTimeout(function () {
+      btn.textContent = orig;
+      btn.setAttribute('aria-label', origLabel);
+    }, 2000);
+  });
+}
+</script>
 </body>
 </html>
