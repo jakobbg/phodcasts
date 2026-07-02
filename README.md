@@ -4,7 +4,9 @@
   <img src="logo.png" alt="phodcasts logo" width="160">
 </p>
 
-A single-file PHP server that turns a folder of audio files into podcast-app-compatible RSS feeds. Point it at a directory, and every subfolder becomes a subscribable podcast feed — no database, no dependencies, no configuration beyond four constants at the top of the file.
+A lightweight PHP server that turns a folder of audio files into podcast-app-compatible RSS feeds. Point it at a directory, and every subfolder becomes a subscribable podcast feed — no database, no dependencies, and minimal configuration.
+
+The codebase is being modularized for readability and maintenance. `index.php` remains the entrypoint and dispatcher, while shared logic now lives under `config/` and `src/`, and the index page template lives in `views/index.phtml`.
 
 Intended for self-hosters who have downloaded podcasts or ripped audiobooks to a NAS and want to re-subscribe to them in a standard podcast app (Apple Podcasts, Overcast, Pocket Casts, etc.).
 
@@ -28,8 +30,8 @@ Intended for self-hosters who have downloaded podcasts or ripped audiobooks to a
 
 ## Setup
 
-1. Copy `index.php` and `.htaccess` to your web root (or virtual host directory).
-2. Edit the constants at the top of `index.php`:
+1. Copy the full project (`index.php`, `.htaccess`, `config/`, `src/`, `views/`, and image assets) to your web root (or virtual host directory).
+2. Edit the constants in `config/constants.php`:
 
 ```php
 const PODCAST_ROOT    = '/mnt/torrents/Podcasts';
@@ -68,6 +70,22 @@ Each card on the index page has two buttons:
 | **Copy RSS** | Copies the raw RSS URL to the clipboard — paste it into any podcast app's "Add by URL" dialog |
 
 The "Apple Podcasts" link uses the `podcast://` URL scheme with a clean path (no query string). An Apache `mod_rewrite` rule maps `/feed/Show+Name` to the PHP RSS handler, which lets the link work reliably across all browsers. Without this, browsers sometimes strip query strings when handing off custom URL schemes to native apps.
+
+## Smoke tests
+
+Run lightweight no-dependency smoke tests from the project root:
+
+```bash
+make smoke
+```
+
+Alternative (if you do not want to use `make`):
+
+```bash
+sh tests/run_smoke.sh
+```
+
+They validate high-risk logic such as episode title normalization, feed path safety checks, media stream/range/ETag behavior, reverse-proxy URL generation, and required project structure.
 
 ## Episode title cleanup
 

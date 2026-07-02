@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>phodcasts</title>
+
+  <!-- Favicon & home-screen icon -->
+  <link rel="icon" type="image/png" href="<?= h($faviconUrl) ?>">
+  <link rel="apple-touch-icon" href="<?= h($iconUrl) ?>">
+  <meta name="apple-mobile-web-app-title" content="phodcasts">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Open Graph - iMessage / Slack / Discord link previews -->
+  <meta property="og:type"        content="website">
+  <meta property="og:site_name"   content="phodcasts">
+  <meta property="og:title"       content="phodcasts">
+  <meta property="og:description" content="Your podcasts &amp; audiobooks, streamed from your own server.">
+  <meta property="og:url"         content="<?= h($base) ?>">
+  <meta property="og:image"       content="<?= h($ogImageUrl) ?>">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type"  content="image/png">
+
+  <!-- Twitter / X card (also used by some other clients) -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="phodcasts">
+  <meta name="twitter:description" content="Your podcasts &amp; audiobooks, streamed from your own server.">
+  <meta name="twitter:image"       content="<?= h($ogImageUrl) ?>">
+  <style>
+    :root {
+      --bg: #0b1220;
+      --bg2: #0d1b2e;
+      --card: rgba(255,255,255,.08);
+      --cardBorder: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --shadow: rgba(0,0,0,.28);
+      --accent: #7c3aed;
+      --accent2: #06b6d4;
+      --radius: 18px;
+
+      --font-sans: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI Variable", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-serif: ui-serif, "New York", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f7fb;
+        --bg2: #eef2ff;
+        --card: rgba(255,255,255,.75);
+        --cardBorder: rgba(15,23,42,.12);
+        --text: rgba(15,23,42,.92);
+        --muted: rgba(15,23,42,.66);
+        --shadow: rgba(15,23,42,.14);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      line-height: 1.45;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 500px at 10% 0%, rgba(124,58,237,.35), transparent 60%),
+        radial-gradient(900px 500px at 90% 10%, rgba(6,182,212,.25), transparent 55%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      background-attachment: fixed;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    a:focus-visible { outline: 2px solid rgba(124,58,237,.55); outline-offset: 3px; border-radius: 10px; }
+
+    /* Skip-to-content link: visually hidden until focused */
+    .skip-link {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0;
+    }
+    .skip-link:focus-visible {
+      position: fixed;
+      top: 10px; left: 10px;
+      width: auto; height: auto;
+      padding: 10px 18px;
+      clip: auto; overflow: visible;
+      background: var(--accent); color: #fff;
+      border-radius: 10px; font-weight: 700; font-size: 14px;
+      z-index: 9999;
+      outline: 2px solid #fff; outline-offset: 2px;
+    }
+
+    /* Visible focus rings for interactive elements */
+    .btn:focus-visible, .filter-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .btn.primary:focus-visible { outline-color: #fff; }
+
+    /* Respect reduced-motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      .btn, .filter-btn { transition: none; }
+      .btn:hover, .filter-btn:hover { transform: none; }
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 40px 20px 56px;
+    }
+
+    .hero {
+      margin-bottom: 22px;
+      padding: 22px 22px 18px;
+      border: 1px solid var(--cardBorder);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      box-shadow: 0 18px 60px var(--shadow);
+      border-radius: var(--radius);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-family: var(--font-serif);
+      font-weight: 700;
+      letter-spacing: .2px;
+      font-size: clamp(28px, 4vw, 40px);
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.95em;
+      padding: 0.18rem 0.42rem;
+      border-radius: 10px;
+      border: 1px solid var(--cardBorder);
+      background: rgba(255,255,255,.08);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--cardBorder);
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px 16px 14px;
+      box-shadow: 0 16px 44px var(--shadow);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cover {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid var(--cardBorder);
+      display: block;
+      margin: 0 0 12px;
+      background: rgba(255,255,255,.06);
+    }
+
+    .pod-title {
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 18px;
+      margin: 0 0 10px;
+      letter-spacing: .2px;
+    }
+
+    .meta {
+      margin: -4px 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--cardBorder);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-weight: 650;
+      font-size: 14px;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      user-select: none;
+    }
+
+    .btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.10); }
+
+    .btn.primary {
+      border-color: rgba(124,58,237,.55);
+      background: linear-gradient(135deg, rgba(124,58,237,.92), rgba(6,182,212,.72));
+      color: white;
+    }
+
+    .btn.primary:hover { background: linear-gradient(135deg, rgba(124,58,237,1), rgba(6,182,212,.85)); }
+
+    .site-footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .site-footer p { margin: 0; }
+
+    .divider {
+      height: 1px;
+      margin: 18px 0 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--cardBorder);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
+    }
+
+    .filter-btn:hover {
+      background: rgba(255,255,255,.12);
+      color: var(--text);
+    }
+
+    .filter-btn.active {
+      background: linear-gradient(135deg, rgba(124,58,237,.85), rgba(6,182,212,.65));
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .type-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+
+    .type-badge.podcast {
+      background: rgba(124,58,237,.22);
+      color: #a78bfa;
+      border: 1px solid rgba(124,58,237,.35);
+    }
+
+    .type-badge.book {
+      background: rgba(6,182,212,.18);
+      color: #67e8f9;
+      border: 1px solid rgba(6,182,212,.30);
+    }
+
+    @media (prefers-color-scheme: light) {
+      .divider { background: linear-gradient(90deg, transparent, rgba(15,23,42,.18), transparent); }
+      .hero { background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.75)); }
+      code { background: rgba(15,23,42,.04); }
+      .btn { background: rgba(255,255,255,.75); }
+      .type-badge.podcast { background: rgba(124,58,237,.10); color: #6d28d9; border-color: rgba(124,58,237,.25); }
+      .type-badge.book    { background: rgba(6,182,212,.10);  color: #0e7490; border-color: rgba(6,182,212,.25); }
+      .filter-btn         { background: rgba(255,255,255,.75); }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <div class="wrap">
+    <header class="hero">
+      <h1>Podcast &amp; Audiobook Feeds</h1>
+      <p class="sub">Podcasts in <code><?php echo h(PODCAST_ROOT . '/' . PODCASTS_SUBDIR); ?></code> &middot; Audio Books in <code><?php echo h(PODCAST_ROOT . '/' . BOOKS_SUBDIR); ?></code></p>
+    </header>
+
+    <?php
+      $filterLinks = [
+        'all'      => ['icon' => '🎙+📚', 'text' => 'All',         'title' => 'Show everything'],
+        'podcasts' => ['icon' => '🎙',     'text' => 'Podcasts',    'title' => 'Show podcasts only'],
+        'books'    => ['icon' => '📚',     'text' => 'Audio Books', 'title' => 'Show audio books only'],
+      ];
+    ?>
+    <nav class="filter-bar" aria-label="Content type filter">
+      <?php foreach ($filterLinks as $val => $info):
+        $href = $base . '?' . http_build_query(['filter' => $val]);
+        $active = ($filter === $val) ? ' active' : '';
+        $aria = $filter === $val ? ' aria-current="page"' : '';
+      ?>
+        <a class="filter-btn<?php echo $active; ?>" href="<?php echo h($href); ?>" title="<?php echo h($info['title']); ?>"<?php echo $aria; ?>><span aria-hidden="true"><?php echo $info['icon']; ?></span> <?php echo h($info['text']); ?></a>
+      <?php endforeach; ?>
+    </nav>
+
+    <main id="main-content">
+
+    <?php if (empty($feeds)): ?>
+      <div class="card">No subfolders found (or not readable) for the selected filter.</div>
+    <?php else: ?>
+      <div class="grid">
+        <?php foreach ($feeds as $f):
+          $rss = $base . '?' . http_build_query(['feed' => $f['id']]);
+          // Build a clean path URL (no query string) for the podcast:// scheme.
+          // Browsers pass custom URL schemes to the OS far more reliably when
+          // the URL is a simple path - query strings are routinely dropped by
+          // Chrome and others before handing off to the native app handler.
+          $encodedId   = implode('/', array_map('rawurlencode', explode('/', $f['id'])));
+          $cleanFeedUrl = $assetBase . 'feed/' . $encodedId;
+          $podcastUrl   = preg_replace('#^https?://#i', 'podcast://', $cleanFeedUrl);
+
+          $stats = podcast_stats($f['dir']);
+          $episodeCount = (int)$stats['count'];
+
+          $newestTs = !empty($stats['newest_ts']) ? (int)$stats['newest_ts'] : null;
+          $newestIso = $newestTs !== null ? gmdate('Y-m-d', $newestTs) : null;
+          $newestHuman = $newestTs !== null ? human_age($newestTs) : null;
+
+          $coverImgPath = discover_image($f['dir']);
+          $coverUrl = $coverImgPath !== null
+              ? media_url($f['id'], basename($coverImgPath))
+              : null;
+          $badgeLabel = $f['type'] === 'book' ? 'Audio Book' : 'Podcast';
+          $badgeEmoji = $f['type'] === 'book' ? '📚' : '🎙';
+          $badgeClass = $f['type'] === 'book' ? 'book' : 'podcast';
+        ?>
+          <section class="card" aria-label="<?php echo h($f['name']); ?>">
+            <?php if ($coverUrl !== null): ?>
+              <img class="cover" src="<?php echo h($coverUrl); ?>" alt="Cover art for <?php echo h($f['name']); ?>" loading="lazy" />
+            <?php endif; ?>
+            <span class="type-badge <?php echo $badgeClass; ?>"><span aria-hidden="true"><?php echo $badgeEmoji; ?></span> <?php echo h($badgeLabel); ?></span>
+            <h2 class="pod-title"><?php echo h($f['name']); ?></h2>
+            <div class="meta">
+              <?php echo (int)$episodeCount; ?> episodes<?php if ($newestHuman !== null): ?> &middot; Newest: <time datetime="<?php echo h((string)$newestIso); ?>"><?php echo h($newestHuman); ?></time><?php endif; ?>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn" onclick="copyFeed(this,'<?php echo h(addslashes($rss)); ?>')" aria-label="Copy RSS feed URL for <?php echo h($f['name']); ?>">Copy RSS</button>
+              <a href="<?php echo h($podcastUrl); ?>" class="btn primary" aria-label="Open <?php echo h($f['name']); ?> in Apple Podcasts">Apple Podcasts</a>
+            </div>
+          </section>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
+    </main>
+
+    <div class="divider"></div>
+    <footer class="site-footer">
+      <p>Tap <strong>Apple Podcasts</strong> to subscribe directly. Use <strong>Copy RSS</strong> to paste the feed URL into any other podcast app.</p>
+    </footer>
+  </div>
+
+<script>
+function copyFeed(btn, url) {
+  if (!navigator.clipboard) {
+    prompt("Copy this feed URL:", url);
+    return;
+  }
+  navigator.clipboard.writeText(url).then(function () {
+    var orig = btn.textContent;
+    var origLabel = btn.getAttribute('aria-label');
+    btn.textContent = "Copied!";
+    btn.setAttribute('aria-label', 'Copied to clipboard');
+    setTimeout(function () {
+      btn.textContent = orig;
+      btn.setAttribute('aria-label', origLabel);
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>
