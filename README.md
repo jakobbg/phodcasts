@@ -9,7 +9,7 @@ Intended for self-hosters who have downloaded podcasts or ripped audiobooks to a
 - Scans two directories — one for **podcasts**, one for **audiobooks** — and generates an RSS 2.0 + iTunes feed per subfolder
 - Serves a web index listing all feeds with cover art, episode count, and newest-episode age
 - Streams audio files with HTTP range-request support (seekable playback, resumable downloads)
-- Detects publish dates from filenames (`Show.2024-03-15.mp3`); preserves natural sort order otherwise
+- **Podcasts** sort newest-first; **audiobooks** sort ascending by filename (chapter order)
 - Picks up `cover.jpg` / `cover.png` / `folder.jpg` / `folder.png` as podcast artwork
 - Works correctly behind a reverse proxy (respects `X-Forwarded-Proto` / `X-Forwarded-Host`)
 

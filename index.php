@@ -194,7 +194,7 @@ function podcast_stats(string $feedDir): array {
     ];
 }
 
-function find_media_files(string $feedDir): array {
+function find_media_files(string $feedDir, string $type = 'podcast'): array {
     $allowed = allowed_media_mimes();
 
     $files = [];
@@ -246,7 +246,10 @@ function find_media_files(string $feedDir): array {
     }
     unset($f);
 
-    usort($files, fn($a, $b) => $b['sort_ts'] <=> $a['sort_ts']);
+    // Books: keep ascending filename order. Podcasts: newest first.
+    if ($type !== 'book') {
+        usort($files, fn($a, $b) => $b['sort_ts'] <=> $a['sort_ts']);
+    }
 
     return $files;
 }
@@ -298,7 +301,7 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     $self = $base . '?' . http_build_query(['feed' => $feed]);
     $name = basename($feed);
 
-    $items = find_media_files($feedDir);
+    $items = find_media_files($feedDir, $type);
 
     // Use the newest sort_ts across all items, not just the first (alphabetical) one.
     $lastBuild = time();
