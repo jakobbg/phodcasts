@@ -346,6 +346,7 @@
           $showUrl      = $assetBase . 'show/' . $encodedId;
 
           $stats = podcast_stats($f['dir']);
+          if (!$stats['has_content']) continue;
           $episodeCount = (int)$stats['count'];
 
           $newestTs = !empty($stats['newest_ts']) ? (int)$stats['newest_ts'] : null;

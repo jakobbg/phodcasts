@@ -85,6 +85,7 @@ function podcast_stats(string $feedDir): array {
     $allowed = allowed_media_mimes();
     $count = 0;
     $newestTs = null;
+    $hasContent = false;
 
     $it = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($feedDir, FilesystemIterator::SKIP_DOTS)
@@ -97,6 +98,10 @@ function podcast_stats(string $feedDir): array {
         if (!isset($allowed[$ext])) continue;
 
         $count++;
+
+        if ($fi->getSize() > 0) {
+            $hasContent = true;
+        }
 
         $path = $fi->getPathname();
         $rel = substr($path, strlen(rtrim($feedDir, DIRECTORY_SEPARATOR)) + 1);
@@ -113,8 +118,9 @@ function podcast_stats(string $feedDir): array {
     }
 
     return [
-        'count' => $count,
-        'newest_ts' => $newestTs,
+        'count'       => $count,
+        'newest_ts'   => $newestTs,
+        'has_content' => $hasContent,
     ];
 }
 
