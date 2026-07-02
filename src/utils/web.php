@@ -173,38 +173,55 @@ function media_url(string $feed, string $relPath): string {
 function cover_placeholder_svg(string $title, string $altName, string $cssClass = 'cover cover-placeholder'): string
 {
     // Deterministic hue from title; second stop shifted +55° for contrast.
-    $hue     = abs(crc32($title)) % 360;
-    $hue2    = ($hue + 55) % 360;
-    $gradId  = 'ph-' . abs(crc32($title)); // unique per title, safe for multi-card pages
+    $hue    = abs(crc32($title)) % 360;
+    $hue2   = ($hue + 55) % 360;
+    $gradId = 'ph-' . abs(crc32($title)); // unique per title, safe for multi-card pages
 
-    // Wrap title into up to 3 lines of ~12 chars each.
-    $words   = preg_split('/\s+/', trim($title), -1, PREG_SPLIT_NO_EMPTY);
+    // Wrap title into up to 4 lines targeting ~16 chars each.
+    // Line count auto-scales with title length so long names always get
+    // enough lines instead of overflowing onto one massive last line.
+    $words      = preg_split('/\s+/', trim($title), -1, PREG_SPLIT_NO_EMPTY);
+    $totalLen   = mb_strlen(implode(' ', $words));
+    $lineTarget = 16;
+    $maxLines   = min(4, max(1, (int)ceil($totalLen / $lineTarget)));
+
     $lines   = [];
     $current = '';
     foreach ($words as $word) {
         if ($current === '') {
             $current = $word;
-        } elseif (mb_strlen($current . ' ' . $word) <= 12) {
+        } elseif (mb_strlen($current . ' ' . $word) <= $lineTarget) {
             $current .= ' ' . $word;
-        } elseif (count($lines) < 2) {
+        } elseif (count($lines) < $maxLines - 1) {
             $lines[]  = $current;
             $current  = $word;
         } else {
-            $current .= ' ' . $word; // force remaining words onto last line
+            $current .= ' ' . $word; // last line: append remaining words
         }
     }
     if ($current !== '') $lines[] = $current;
 
-    // Font size scales with the longest line so text stays inside the square.
+    // Font size scales with the longest line.
     $maxLen   = max(array_map('mb_strlen', $lines));
-    $fontSize = min(34, max(12, (int)round(248 / max($maxLen, 1))));
+    $fontSize = min(34, max(11, (int)round(248 / max($maxLen, 1))));
     $lineH    = (int)round($fontSize * 1.28);
     $n        = count($lines);
     $startY   = (int)round(90 - ($n - 1) * $lineH / 2);
 
+    // Apply SVG textLength on lines that would overflow the usable viewport
+    // width (180px − 2×15px padding = 150), regardless of font metrics.
+    $safeWidth  = 150;
+    $charWRatio = 0.60; // conservative sans-serif bold estimate
+
     $tspans = '';
     foreach ($lines as $i => $line) {
-        $tspans .= '<tspan x="90" y="' . ($startY + $i * $lineH) . '">' . h($line) . '</tspan>';
+        $y    = $startY + $i * $lineH;
+        $estW = (int)round(mb_strlen($line) * $charWRatio * $fontSize);
+        $attr = 'x="90" y="' . $y . '"';
+        if ($estW > $safeWidth) {
+            $attr .= ' textLength="' . $safeWidth . '" lengthAdjust="spacingAndGlyphs"';
+        }
+        $tspans .= '<tspan ' . $attr . '>' . h($line) . '</tspan>';
     }
 
     return '<svg class="' . h($cssClass) . '" viewBox="0 0 180 180"'
