@@ -92,7 +92,7 @@ Each feed has a detail page at `show/Podcasts/My+Show` (or `?show=Podcasts/My+Sh
 - RSS and Apple Podcasts action buttons
 - **Description** — rendered from `notes.md` if the file exists in the feed directory, otherwise falls back to the Open Library summary
 - **Episode table** — every track listed with cleaned title, duration, file size, format badge, estimated bitrate, and date
-- **Built-in player** — a sticky bar slides up from the bottom when you click any episode's play button; supports seek, pause/resume, and close; the active row shows a pause icon while playing
+- **Built-in player** — a sticky bar slides up from the bottom when you click any episode's play button; supports seek, pause/resume, and close; the active row shows a pause icon while playing. Toggle **⇥ Auto** in the player bar to enable auto-advance: each episode automatically plays the next one when it ends, so you can listen to a whole show without touching the screen
 
 **Adding a custom description**
 
@@ -163,7 +163,7 @@ All responses include `X-Content-Type-Options: nosniff` to prevent MIME-type sni
 
 HTML responses additionally include:
 - `X-Frame-Options: SAMEORIGIN`
-- `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'self'`
+- `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; media-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'self'`
 - `Referrer-Policy: same-origin`
 - `X-Robots-Tag: noindex, nofollow`
 
