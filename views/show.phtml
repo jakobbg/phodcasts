@@ -310,33 +310,8 @@
   <div class="hero">
     <?php if ($coverUrl !== null): ?>
       <img class="cover" src="<?= h($coverUrl) ?>" alt="Cover art for <?= h($name) ?>">
-    <?php else:
-      $phWords = preg_split('/\s+/', $displayTitle, -1, PREG_SPLIT_NO_EMPTY);
-      $phSkip  = ['the','a','an','der','die','das','le','la','les','och','og'];
-      $phSig   = array_values(array_filter($phWords, fn($w) => !in_array(mb_strtolower($w), $phSkip)));
-      if (count($phSig) >= 2)
-          $phInit = mb_strtoupper(mb_substr($phSig[0], 0, 1) . mb_substr($phSig[1], 0, 1));
-      elseif (count($phSig) === 1)
-          $phInit = mb_strtoupper(mb_substr($phSig[0], 0, 2));
-      else
-          $phInit = mb_strtoupper(mb_substr($displayTitle, 0, 2));
-      $phHue  = abs(crc32($displayTitle)) % 360;
-      $phHue2 = ($phHue + 40) % 360;
-    ?>
-      <svg class="cover cover-placeholder" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg"
-           role="img" aria-label="No cover art for <?= h($name) ?>">
-        <defs>
-          <linearGradient id="ph-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"   stop-color="hsl(<?= $phHue ?>,55%,30%)"/>
-            <stop offset="100%" stop-color="hsl(<?= $phHue2 ?>,50%,20%)"/>
-          </linearGradient>
-        </defs>
-        <rect width="180" height="180" fill="url(#ph-grad)"/>
-        <text x="90" y="90" dominant-baseline="central" text-anchor="middle"
-              font-family="ui-sans-serif,system-ui,-apple-system,sans-serif"
-              font-size="<?= mb_strlen($phInit) > 1 ? '68' : '82' ?>" font-weight="700"
-              fill="rgba(255,255,255,0.88)"><?= h($phInit) ?></text>
-      </svg>
+    <?php else: ?>
+      <?= cover_placeholder_svg($displayTitle, $name) ?>
     <?php endif; ?>
 
     <div class="hero-body">

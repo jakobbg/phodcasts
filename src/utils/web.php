@@ -160,6 +160,51 @@ function media_url(string $feed, string $relPath): string {
 }
 
 /**
+ * Return an inline SVG that acts as a cover-art placeholder when no image is
+ * available.  The gradient hue and initials are derived deterministically from
+ * $title so each show gets a unique, stable appearance.
+ *
+ * $cssClass  — space-separated CSS classes applied to the <svg> element.
+ *              Defaults to "cover cover-placeholder" so it inherits the same
+ *              sizing and border rules as a real <img class="cover">.
+ */
+function cover_placeholder_svg(string $title, string $altName, string $cssClass = 'cover cover-placeholder'): string
+{
+    // Build 1–2 letter monogram, skipping common articles.
+    $skip  = ['the','a','an','der','die','das','le','la','les','och','og'];
+    $words = preg_split('/\s+/', $title, -1, PREG_SPLIT_NO_EMPTY);
+    $sig   = array_values(array_filter($words, fn($w) => !in_array(mb_strtolower($w), $skip)));
+    if (count($sig) >= 2) {
+        $init = mb_strtoupper(mb_substr($sig[0], 0, 1) . mb_substr($sig[1], 0, 1));
+    } elseif (count($sig) === 1) {
+        $init = mb_strtoupper(mb_substr($sig[0], 0, 2));
+    } else {
+        $init = mb_strtoupper(mb_substr($title, 0, 2));
+    }
+
+    $hue  = abs(crc32($title)) % 360;
+    $hue2 = ($hue + 40) % 360;
+    $fs   = mb_strlen($init) > 1 ? 68 : 82;
+
+    return '<svg class="' . h($cssClass) . '" viewBox="0 0 180 180"'
+         . ' xmlns="http://www.w3.org/2000/svg" role="img"'
+         . ' aria-label="' . h('No cover art for ' . $altName) . '">'
+         . '<defs>'
+         . '<linearGradient id="ph-grad" x1="0" y1="0" x2="1" y2="1">'
+         . '<stop offset="0%"   stop-color="hsl(' . $hue  . ',55%,30%)"/>'
+         . '<stop offset="100%" stop-color="hsl(' . $hue2 . ',50%,20%)"/>'
+         . '</linearGradient>'
+         . '</defs>'
+         . '<rect width="180" height="180" fill="url(#ph-grad)"/>'
+         . '<text x="90" y="90" dominant-baseline="central" text-anchor="middle"'
+         . ' font-family="ui-sans-serif,system-ui,-apple-system,sans-serif"'
+         . ' font-size="' . $fs . '" font-weight="700" fill="rgba(255,255,255,0.88)">'
+         . h($init)
+         . '</text>'
+         . '</svg>';
+}
+
+/**
  * Emit shared security headers appropriate for a given content type context.
  * $context: 'html' | 'rss' | 'media' | 'asset'
  */

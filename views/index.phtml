@@ -363,6 +363,8 @@
           <section class="card" aria-label="<?php echo h($f['name']); ?>">
             <?php if ($coverUrl !== null): ?>
               <img class="cover" src="<?php echo h($coverUrl); ?>" alt="Cover art for <?php echo h($f['name']); ?>" loading="lazy" />
+            <?php else: ?>
+              <?php echo cover_placeholder_svg($f['name'], $f['name']); ?>
             <?php endif; ?>
             <span class="type-badge <?php echo $badgeClass; ?>"><span aria-hidden="true"><?php echo $badgeEmoji; ?></span> <?php echo h($badgeLabel); ?></span>
             <h2 class="pod-title"><?php echo h($f['name']); ?></h2>
