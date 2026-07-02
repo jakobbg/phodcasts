@@ -319,6 +319,23 @@
   html[data-theme="light"] .type-badge.book    { background: rgba(6,182,212,.10);  color: #0e7490; border-color: rgba(6,182,212,.25); }
   html[data-theme="light"] .filter-btn         { background: rgba(255,255,255,.75); }
 
+  /* Pager */
+  .pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0 6px;
+    flex-wrap: wrap;
+  }
+  .pager-info {
+    font-size: 14px;
+    color: var(--muted);
+    min-width: 120px;
+    text-align: center;
+  }
+  .pager .btn[aria-disabled="true"] { opacity: .4; cursor: default; }
+
   /* Theme toggle button */
   .theme-toggle {
     position: fixed; top: 14px; right: 16px; z-index: 50;
@@ -412,6 +429,22 @@
           </section>
         <?php endforeach; ?>
       </div>
+    <?php endif; ?>
+
+    <?php if ($totalPages > 1): ?>
+    <nav class="pager" aria-label="Page navigation">
+      <?php if ($page > 1): ?>
+        <a href="<?php echo h($base . '?' . http_build_query(['filter' => $filter, 'page' => $page - 1])); ?>" class="btn" aria-label="Previous page">&#x2190; Prev</a>
+      <?php else: ?>
+        <span class="btn" aria-disabled="true">&#x2190; Prev</span>
+      <?php endif; ?>
+      <span class="pager-info">Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
+      <?php if ($page < $totalPages): ?>
+        <a href="<?php echo h($base . '?' . http_build_query(['filter' => $filter, 'page' => $page + 1])); ?>" class="btn" aria-label="Next page">Next &#x2192;</a>
+      <?php else: ?>
+        <span class="btn" aria-disabled="true">Next &#x2192;</span>
+      <?php endif; ?>
+    </nav>
     <?php endif; ?>
 
     </main>
