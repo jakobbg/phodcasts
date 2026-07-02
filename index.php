@@ -907,6 +907,8 @@ header('Content-Type: text/html; charset=UTF-8');
       padding: 16px 16px 14px;
       box-shadow: 0 16px 44px var(--shadow);
       backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
     }
 
     .cover {
@@ -938,6 +940,7 @@ header('Content-Type: text/html; charset=UTF-8');
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      margin-top: auto;
     }
 
     .btn {
