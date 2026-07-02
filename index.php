@@ -852,7 +852,40 @@ header('Content-Type: text/html; charset=UTF-8');
     }
 
     a { color: inherit; text-decoration: none; }
-    a:focus { outline: 2px solid rgba(124,58,237,.55); outline-offset: 3px; border-radius: 10px; }
+    a:focus-visible { outline: 2px solid rgba(124,58,237,.55); outline-offset: 3px; border-radius: 10px; }
+
+    /* Skip-to-content link: visually hidden until focused */
+    .skip-link {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0;
+    }
+    .skip-link:focus-visible {
+      position: fixed;
+      top: 10px; left: 10px;
+      width: auto; height: auto;
+      padding: 10px 18px;
+      clip: auto; overflow: visible;
+      background: var(--accent); color: #fff;
+      border-radius: 10px; font-weight: 700; font-size: 14px;
+      z-index: 9999;
+      outline: 2px solid #fff; outline-offset: 2px;
+    }
+
+    /* Visible focus rings for interactive elements */
+    .btn:focus-visible, .filter-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .btn.primary:focus-visible { outline-color: #fff; }
+
+    /* Respect reduced-motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      .btn, .filter-btn { transition: none; }
+      .btn:hover, .filter-btn:hover { transform: none; }
+    }
 
     .wrap {
       max-width: 980px;
@@ -968,11 +1001,12 @@ header('Content-Type: text/html; charset=UTF-8');
 
     .btn.primary:hover { background: linear-gradient(135deg, rgba(124,58,237,1), rgba(6,182,212,.85)); }
 
-    .footer {
+    .site-footer {
       margin-top: 18px;
       color: var(--muted);
       font-size: 14px;
     }
+    .site-footer p { margin: 0; }
 
     .divider {
       height: 1px;
@@ -1048,6 +1082,7 @@ header('Content-Type: text/html; charset=UTF-8');
   </style>
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <div class="wrap">
     <header class="hero">
       <h1>Podcast &amp; Audiobook Feeds</h1>
@@ -1056,9 +1091,9 @@ header('Content-Type: text/html; charset=UTF-8');
 
     <?php
       $filterLinks = [
-        'all'      => ['label' => '🎙+📚 All',         'title' => 'Show everything'],
-        'podcasts' => ['label' => '🎙 Podcasts',        'title' => 'Show podcasts only'],
-        'books'    => ['label' => '📚 Audio Books',     'title' => 'Show audio books only'],
+        'all'      => ['icon' => '🎙+📚', 'text' => 'All',         'title' => 'Show everything'],
+        'podcasts' => ['icon' => '🎙',     'text' => 'Podcasts',    'title' => 'Show podcasts only'],
+        'books'    => ['icon' => '📚',     'text' => 'Audio Books', 'title' => 'Show audio books only'],
       ];
     ?>
     <nav class="filter-bar" aria-label="Content type filter">
@@ -1067,9 +1102,11 @@ header('Content-Type: text/html; charset=UTF-8');
         $active = ($filter === $val) ? ' active' : '';
         $aria = $filter === $val ? ' aria-current="page"' : '';
       ?>
-        <a class="filter-btn<?php echo $active; ?>" href="<?php echo h($href); ?>" title="<?php echo h($info['title']); ?>"<?php echo $aria; ?>><?php echo $info['label']; ?></a>
+        <a class="filter-btn<?php echo $active; ?>" href="<?php echo h($href); ?>" title="<?php echo h($info['title']); ?>"<?php echo $aria; ?>><span aria-hidden="true"><?php echo $info['icon']; ?></span> <?php echo h($info['text']); ?></a>
       <?php endforeach; ?>
     </nav>
+
+    <main id="main-content">
 
     <?php if (empty($feeds)): ?>
       <div class="card">No subfolders found (or not readable) for the selected filter.</div>
@@ -1096,17 +1133,18 @@ header('Content-Type: text/html; charset=UTF-8');
           $coverUrl = $coverImgPath !== null
               ? media_url($f['id'], basename($coverImgPath))
               : null;
-          $badgeLabel = $f['type'] === 'book' ? '📚 Audio Book' : '🎙 Podcast';
+          $badgeLabel = $f['type'] === 'book' ? 'Audio Book' : 'Podcast';
+          $badgeEmoji = $f['type'] === 'book' ? '📚' : '🎙';
           $badgeClass = $f['type'] === 'book' ? 'book' : 'podcast';
         ?>
           <section class="card" aria-label="<?php echo h($f['name']); ?>">
             <?php if ($coverUrl !== null): ?>
               <img class="cover" src="<?php echo h($coverUrl); ?>" alt="Cover art for <?php echo h($f['name']); ?>" loading="lazy" />
             <?php endif; ?>
-            <span class="type-badge <?php echo $badgeClass; ?>"><?php echo $badgeLabel; ?></span>
-            <div class="pod-title"><?php echo h($f['name']); ?></div>
+            <span class="type-badge <?php echo $badgeClass; ?>"><span aria-hidden="true"><?php echo $badgeEmoji; ?></span> <?php echo h($badgeLabel); ?></span>
+            <h2 class="pod-title"><?php echo h($f['name']); ?></h2>
             <div class="meta">
-              <?php echo (int)$episodeCount; ?> episodes<?php if ($newestHuman !== null): ?> &middot; <span title="<?php echo h((string)$newestIso); ?>">Newest: <?php echo h($newestHuman); ?></span><?php endif; ?>
+              <?php echo (int)$episodeCount; ?> episodes<?php if ($newestHuman !== null): ?> &middot; Newest: <time datetime="<?php echo h((string)$newestIso); ?>"><?php echo h($newestHuman); ?></time><?php endif; ?>
             </div>
             <div class="actions">
               <button type="button" class="btn" onclick="copyFeed(this,'<?php echo h(addslashes($rss)); ?>')" aria-label="Copy RSS feed URL for <?php echo h($f['name']); ?>">Copy RSS</button>
@@ -1117,8 +1155,12 @@ header('Content-Type: text/html; charset=UTF-8');
       </div>
     <?php endif; ?>
 
+    </main>
+
     <div class="divider"></div>
-    <p class="footer">Tap <strong>Apple Podcasts</strong> to subscribe directly. Use <strong>Copy RSS</strong> to paste the feed URL into any other podcast app.</p>
+    <footer class="site-footer">
+      <p>Tap <strong>Apple Podcasts</strong> to subscribe directly. Use <strong>Copy RSS</strong> to paste the feed URL into any other podcast app.</p>
+    </footer>
   </div>
 
 <script>
@@ -1129,8 +1171,13 @@ function copyFeed(btn, url) {
   }
   navigator.clipboard.writeText(url).then(function () {
     var orig = btn.textContent;
+    var origLabel = btn.getAttribute('aria-label');
     btn.textContent = "Copied!";
-    setTimeout(function () { btn.textContent = orig; }, 2000);
+    btn.setAttribute('aria-label', 'Copied to clipboard');
+    setTimeout(function () {
+      btn.textContent = orig;
+      btn.setAttribute('aria-label', origLabel);
+    }, 2000);
   });
 }
 </script>
