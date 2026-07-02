@@ -13,6 +13,8 @@ $requiredPaths = [
     'src/feed/library.php',
     'src/feed/metadata.php',
     'src/handlers/showpage.php',
+    'tests/utils_smoke.php',
+    'tests/markdown_smoke.php',
     'views/show.phtml',
     'src/title/library.php',
     'src/handlers/rss.php',

@@ -6,6 +6,8 @@ lint-smoke:
 	php -l tests/web_utils_smoke.php
 	php -l tests/structure_smoke.php
 	php -l tests/metadata_smoke.php
+	php -l tests/utils_smoke.php
+	php -l tests/markdown_smoke.php
 
 smoke: lint-smoke
 	sh tests/run_smoke.sh
