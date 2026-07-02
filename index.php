@@ -328,7 +328,7 @@ function strip_feed_prefix(string $base, string $feedName): string {
  *
  * Patterns handled:
  *   Papaya.2026-01-19           → "19. januar 2026"
- *   tore.og.…podme.2026.s09e10 → "S09E10"
+ *   tore.og.…podme.2026.s09e10 → "Season 9 – Episode 10"
  *   avsnitt042                  → "Avsnitt 42"
  *   07xKapittelx2xxFredag…      → "Kapittel 2"
  *   01xMennxsomxhaterxkvinner   → "Menn som hater kvinner"
@@ -378,9 +378,9 @@ function episode_title(string $rel, string $feedName): string {
 
     // ── Step 3: pattern-specific transformations ─────────────────────────────
 
-    // Season/episode code anywhere in the string: s09e10 → "S09E10"
-    if (preg_match('/\bs(\d{2})e(\d{2,3})\b/i', $t, $m)) {
-        return 'S' . $m[1] . 'E' . $m[2];
+    // Season/episode code anywhere in the string: s09e10 → "Season 9 – Episode 10"
+    if (preg_match('/\bs(\d{1,4})e(\d{1,4})\b/i', $t, $m)) {
+        return 'Season ' . (int)$m[1] . ' – Episode ' . (int)$m[2];
     }
 
     // Standalone ISO date after prefix strip: "2026-01-19" → "19. januar 2026"
