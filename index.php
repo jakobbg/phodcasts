@@ -288,6 +288,223 @@ function pubdate_from_filename(string $relPath): ?int {
     return $dt->getTimestamp();
 }
 
+/**
+ * Strips a feed-name prefix from an episode title base string.
+ * Tries both the full feed name and the short title after "Author - ".
+ * Separators (spaces, dots, hyphens, underscores, commas) are treated
+ * interchangeably when matching.
+ */
+function strip_feed_prefix(string $base, string $feedName): string {
+    $candidates = [$feedName];
+    // Also try just the title part after "Author - " (e.g. "Kafka på stranden"
+    // extracted from "Haruki Murakami - Kafka på stranden").
+    if (preg_match('/^[^-]+-\s*(.+)$/u', $feedName, $sm)) {
+        $candidates[] = trim($sm[1]);
+    }
+
+    foreach ($candidates as $cand) {
+        $words = preg_split('/[\s.\-_,]+/u', trim($cand), -1, PREG_SPLIT_NO_EMPTY);
+        if (empty($words)) continue;
+        // Build a pattern that allows any separator run between words.
+        $pattern = '/^' . implode('[\s.\-_]+', array_map(fn($w) => preg_quote($w, '/'), $words))
+                 . '[\s.\-_]+(.*)/ui';
+        if (preg_match($pattern, $base, $m)) {
+            $stripped = ltrim((string)$m[1], " \t\-–_.,");
+            if ($stripped !== '') return $stripped;
+        }
+    }
+    return $base;
+}
+
+/**
+ * Derives a human-readable episode title from a relative file path.
+ *
+ * Patterns handled:
+ *   Papaya.2026-01-19           → "19. januar 2026"
+ *   tore.og.…podme.2026.s09e10 → "S09E10"
+ *   avsnitt042                  → "Avsnitt 42"
+ *   07xKapittelx2xxFredag…      → "Kapittel 2"
+ *   01xMennxsomxhaterxkvinner   → "Menn som hater kvinner"
+ *   CD01T05                     → "CD 1, Spor 5"
+ *   CD-1008                     → "CD 10, Spor 8"
+ *   07-Track-207 / 07-Track-A07 → "CD 7, Track 2" / "CD 7, Track A"
+ *   01. Track 1 / 01 - Track 1  → "Track 1" (or "CD N, Track 1" with parent context)
+ *   1-01 Spor 01                → "CD 1, Spor 1"
+ *   01 Spor 01                  → "Spor 1" (or "CD N, Spor 1" with parent context)
+ *   Kass1sideB / kass1sideaA    → "Kassett 1, Side B" / "Kassett 1, Side A"
+ *   ShowName - Episode 03       → "Episode 03"  (after feed-prefix strip)
+ *   ShowName - CD01 - Spor 01   → "CD 1, Spor 1"
+ *   07.mp3 (bare number)        → "Episode 7" (or "CD N, Spor 7" with parent context)
+ */
+function episode_title(string $rel, string $feedName): string {
+    static $months = [
+        1 => 'januar', 2 => 'februar', 3 => 'mars',     4 => 'april',
+        5 => 'mai',    6 => 'juni',    7 => 'juli',      8 => 'august',
+        9 => 'september', 10 => 'oktober', 11 => 'november', 12 => 'desember',
+    ];
+
+    $base = preg_replace('/\.[^.]+$/u', '', basename($rel));
+
+    // ── CD context from parent subdirectory ──────────────────────────────────
+    // When files sit in a "CD 1" / "cd01" / "Hodejegerne CD1" sub-folder, we
+    // can attach the disc number to titles that lack it.
+    $dirPart   = dirname($rel);
+    $parentDir = ($dirPart !== '.' && $dirPart !== '') ? basename($dirPart) : '';
+    $parentCdNum = null;
+    if ($parentDir !== '' && preg_match('/[Cc][Dd]\s*0*(\d+)/u', $parentDir, $pm)) {
+        $parentCdNum = (int)$pm[1];
+    }
+
+    // ── Step 1: normalise word-separators ────────────────────────────────────
+    // Dot-separated filenames (no spaces): replace dots with spaces.
+    if (!str_contains($base, ' ') && str_contains($base, '.')) {
+        $base = str_replace('.', ' ', $base);
+    }
+    // Underscore-separated filenames (no spaces): replace underscores with spaces.
+    if (!str_contains($base, ' ') && str_contains($base, '_')) {
+        $base = str_replace('_', ' ', $base);
+    }
+
+    // ── Step 2: strip feed-name prefix ───────────────────────────────────────
+    $base = strip_feed_prefix($base, $feedName);
+    $t    = trim($base);
+
+    // ── Step 3: pattern-specific transformations ─────────────────────────────
+
+    // Season/episode code anywhere in the string: s09e10 → "S09E10"
+    if (preg_match('/\bs(\d{2})e(\d{2,3})\b/i', $t, $m)) {
+        return 'S' . $m[1] . 'E' . $m[2];
+    }
+
+    // Standalone ISO date after prefix strip: "2026-01-19" → "19. januar 2026"
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/u', $t, $m)) {
+        $mo = (int)$m[2];
+        if (isset($months[$mo])) {
+            return (int)$m[3] . '. ' . $months[$mo] . ' ' . $m[1];
+        }
+    }
+
+    // avsnitt + number: "avsnitt042" → "Avsnitt 42"
+    if (preg_match('/^avsnitt\s*0*(\d+)$/iu', $t, $m)) {
+        return 'Avsnitt ' . (int)$m[1];
+    }
+
+    // x-encoded chapter: "07xKapittelx2xx…" → "Kapittel 2"
+    // (x encodes both spaces and the Norwegian ø in FAT-safe filenames)
+    if (preg_match('/^\d+x[Kk]apittelx(\d+)/u', $t, $m)) {
+        return 'Kapittel ' . (int)$m[1];
+    }
+
+    // General x-encoded filenames: "NNxWORD…" (no spaces, no dots/underscores)
+    // xx → " – ", x → " "
+    if (!str_contains($t, ' ') && preg_match('/^\d+x[A-ZÆØÅ]/iu', $t)) {
+        $decoded = preg_replace('/^\d+x/u', '', $t);
+        $decoded = str_replace('xx', ' – ', $decoded);
+        $decoded = str_replace('x', ' ', $decoded);
+        $decoded = preg_replace('/\s+/u', ' ', trim($decoded));
+        return mb_strtoupper(mb_substr($decoded, 0, 1)) . mb_substr($decoded, 1);
+    }
+
+    // Compact CD+track: "CD01T05" → "CD 1, Spor 5"
+    if (preg_match('/^CD\s*0*(\d+)\s*T\s*0*(\d+)$/iu', $t, $m)) {
+        return 'CD ' . (int)$m[1] . ', Spor ' . (int)$m[2];
+    }
+
+    // CD-NNN / CD-NNNN: concatenated disc+track number
+    //   CD-101 (3 dig) = CD 1, Spor 01   CD-1008 (4 dig) = CD 10, Spor 08
+    if (preg_match('/^CD-(\d{3,4})$/u', $t, $m)) {
+        $n  = $m[1];
+        [$cd, $tr] = strlen($n) === 3
+            ? [(int)substr($n, 0, 1), (int)substr($n, 1, 2)]
+            : [(int)substr($n, 0, 2), (int)substr($n, 2, 2)];
+        return 'CD ' . $cd . ', Spor ' . $tr;
+    }
+
+    // NN-Track-XNN: leading seq, track id (1 char), trailing disc digits
+    //   "07-Track-207" → "CD 7, Track 2"   "07-Track-A07" → "CD 7, Track A"
+    if (preg_match('/^(\d+)-Track-([A-Za-z0-9])(\d+)$/iu', $t, $m)) {
+        return 'CD ' . (int)$m[3] . ', Track ' . strtoupper($m[2]);
+    }
+
+    // "NN. Track N" / "NN - Track N" / "NN Track N"
+    if (preg_match('/^\d+[\s.\-]+Track\s+(\d+)$/iu', $t, $m)) {
+        $tr = (int)$m[1];
+        return $parentCdNum !== null ? 'CD ' . $parentCdNum . ', Track ' . $tr : 'Track ' . $tr;
+    }
+
+    // "N-NN Spor NN" (disc-track prefix): "1-01 Spor 01" → "CD 1, Spor 1"
+    if (preg_match('/^(\d+)-\d+\s+Spor\s+(\d+)$/iu', $t, $m)) {
+        return 'CD ' . (int)$m[1] . ', Spor ' . (int)$m[2];
+    }
+
+    // "NN Spor NN"
+    if (preg_match('/^\d+\s+Spor\s+(\d+)$/iu', $t, $m)) {
+        $sp = (int)$m[1];
+        return $parentCdNum !== null ? 'CD ' . $parentCdNum . ', Spor ' . $sp : 'Spor ' . $sp;
+    }
+
+    // "CD01 - Spor 01" (after feed-prefix strip from e.g. "ShowName - CD01 - Spor 01")
+    if (preg_match('/^CD\s*0*(\d+)\s*[-–]\s*Spor\s+0*(\d+)$/iu', $t, $m)) {
+        return 'CD ' . (int)$m[1] . ', Spor ' . (int)$m[2];
+    }
+
+    // Kassett: "Kass1sideB" / "kass1sideaA" → "Kassett 1, Side B"
+    if (preg_match('/^[Kk]ass\s*0*(\d+)\s*[Ss]ide\s*[aA]?([AaBb])$/iu', $t, $m)) {
+        return 'Kassett ' . (int)$m[1] . ', Side ' . strtoupper($m[2]);
+    }
+
+    // 4-digit CCTT: "0101" → "CD 1, Spor 1"  (e.g. jo_nesbø-blod_på_snø-0101)
+    if (preg_match('/^(\d{2})(\d{2})$/u', $t, $m)) {
+        $cd = (int)$m[1];
+        $tr = (int)$m[2];
+        if ($cd > 0 && $tr > 0) {
+            return 'CD ' . $cd . ', Spor ' . $tr;
+        }
+    }
+
+    // Bare number: "07" → "Episode 7" (or "CD N, Spor 7" with parent context)
+    if (preg_match('/^0*(\d+)$/u', $t, $m)) {
+        $n = (int)$m[1];
+        return $parentCdNum !== null
+            ? 'CD ' . $parentCdNum . ', Spor ' . $n
+            : 'Episode ' . $n;
+    }
+
+    // ── Step 4: generic cleanup ───────────────────────────────────────────────
+
+    // Strip leading "NN - " / "NN. " / "NN-" track-sequence prefix.
+    $base = preg_replace('/^\d+\s*[-.\s]+\s*/u', '', $base);
+
+    // If the remainder looks like the parent directory name (e.g. "Sorgenfri CD1"
+    // in subfolder "Sorgenfri CD1"), replace with "CD N, Spor M" using context.
+    if ($parentCdNum !== null) {
+        $normParent  = mb_strtolower(preg_replace('/[\s.\-_,]+/u', ' ', $parentDir));
+        $normTrimmed = mb_strtolower(preg_replace('/[\s.\-_,]+/u', ' ', trim($base)));
+        if (trim($normTrimmed) === trim($normParent)
+            || str_starts_with(trim($normTrimmed), trim($normParent))
+        ) {
+            $origBase = preg_replace('/\.[^.]+$/u', '', basename($rel));
+            if (preg_match('/^0*(\d+)/u', $origBase, $pm)) {
+                return 'CD ' . $parentCdNum . ', Spor ' . (int)$pm[1];
+            }
+        }
+    }
+
+    $base = trim($base);
+
+    // Capitalise first letter.
+    if ($base !== '') {
+        $base = mb_strtoupper(mb_substr($base, 0, 1)) . mb_substr($base, 1);
+    }
+
+    // Last resort: fall back to raw extension-stripped filename.
+    if ($base === '') {
+        $base = preg_replace('/\.[^.]+$/u', '', basename($rel));
+    }
+
+    return $base;
+}
+
 function media_url(string $feed, string $relPath): string {
     return base_url() . '?' . http_build_query([
         'action' => 'media',
@@ -346,7 +563,7 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     }
 
     foreach ($items as $it) {
-        $title = preg_replace('/\\.[^.]+$/', '', basename($it['rel']));
+        $title = episode_title($it['rel'], $name);
         $enclosure = media_url($feed, $it['rel']);
         // Stable GUID: based only on feed name + relative path, not mtime/size.
         $guid = sha1($feed . '|' . $it['rel']);
