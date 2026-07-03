@@ -273,6 +273,9 @@ function send_security_headers(string $context = 'html'): void {
     if ($context === 'html') {
         // Disallow framing by other origins.
         header('X-Frame-Options: SAMEORIGIN');
+        // HSTS: tell browsers to always use HTTPS for 1 year.
+        // includeSubDomains omitted intentionally — only covers this origin.
+        header('Strict-Transport-Security: max-age=31536000');
         // Minimal CSP: page uses only inline styles + inline script,
         // same-origin images and fetch targets, no plugins or objects.
         header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; media-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'self'");

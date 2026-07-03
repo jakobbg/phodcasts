@@ -134,6 +134,10 @@ function render_show_page(string $feed): void {
     if (!empty($sortTs)) $newestTs = (int)max($sortTs);
 
     header('Content-Type: text/html; charset=UTF-8');
+    // Allow conditional 304s; pages are dynamic so revalidation is required.
+    header('Cache-Control: no-cache');
+    // HTTP/2 preload hint for the one external script (theme toggle).
+    header('Link: <' . $assetBase . 'js/theme.js>; rel=preload; as=script', false);
     send_security_headers('html');
     require __DIR__ . '/../../views/show.phtml';
 }

@@ -23,7 +23,9 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     }
 
     header('Content-Type: application/rss+xml; charset=UTF-8');
-    header('Cache-Control: no-cache, no-store, must-revalidate');
+    // 5-minute TTL: podcast clients can cache briefly; stale-while-revalidate
+    // avoids blocking the client while the fresh feed is fetched in background.
+    header('Cache-Control: public, max-age=300, stale-while-revalidate=600');
     send_security_headers('rss');
 
     // Build feed description: user notes (highest priority) → Open Library → default.
