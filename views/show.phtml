@@ -86,10 +86,17 @@
   /* Extra bottom padding so content clears the sticky player */
   body.player-open .wrap { padding-bottom: 110px; }
 
-  /* Back link */
-  .back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px;
-    color: var(--muted); font-size: 14px; font-weight: 600; }
+  /* Top nav row: back link + subtle app wordmark */
+  .show-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .back { display: inline-flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: none; }
   .back:hover { color: var(--text); }
+  .show-brand {
+    font-family: var(--font-serif); font-size: 15px; font-weight: 600;
+    color: var(--muted); opacity: .6; text-decoration: none;
+    transition: opacity .12s, color .12s;
+  }
+  .show-brand:hover { opacity: 1; color: var(--text); }
 
   /* Hero card */
   .hero { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap;
@@ -360,7 +367,10 @@
   <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light theme">&#x2299;</button>
 <div class="wrap">
 
-  <a href="<?= h($backUrl) ?>" class="back">← All feeds</a>
+  <div class="show-nav">
+    <a href="<?= h($backUrl) ?>" class="back">← All feeds</a>
+    <a href="<?= h($backUrl) ?>" class="show-brand">phodcasts</a>
+  </div>
 
   <div class="hero">
     <?php if ($coverUrl !== null): ?>
