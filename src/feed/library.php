@@ -228,7 +228,7 @@ function pubdate_from_filename(string $relPath): ?int {
 /**
  * Returns true as soon as one non-empty audio file is found in the feed
  * directory. Exits early, so it is much faster than podcast_stats().
- * Used to filter placeholder/stub feeds before pagination.
+ * Used to filter placeholder/stub feeds before rendering.
  */
 function feed_has_content(string $feedDir): bool {
     $allowed = allowed_media_mimes();
