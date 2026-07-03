@@ -580,6 +580,14 @@ function copyFeed(btn, url) {
   inp.addEventListener('input', function () { filterCards(inp.value); });
   if (inp.value) filterCards(inp.value);
 }());
+// Remember current page URL so the show detail page can navigate back here.
+(function () {
+  document.querySelectorAll('a.btn[href*="/show/"]').forEach(function (a) {
+    a.addEventListener('click', function () {
+      sessionStorage.setItem('ph-back', window.location.href);
+    });
+  });
+}());
 </script>
 </body>
 </html>

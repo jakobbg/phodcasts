@@ -368,7 +368,7 @@
 <div class="wrap">
 
   <div class="show-nav">
-    <a href="<?= h($backUrl) ?>" class="back" onclick="if(history.length>1){history.back();return false}">← Go back</a>
+    <a href="<?= h($backUrl) ?>" class="back" id="back-link">← Go back</a>
     <a href="<?= h($assetBase) ?>" class="show-brand">phodcasts</a>
   </div>
 
@@ -520,6 +520,18 @@
     <button id="player-auto" class="player-auto-btn" aria-label="Auto-advance: off" aria-pressed="false">&#x21E5; Auto</button>
   </div>
 </div>
+
+<script>
+// Restore the back-link URL from sessionStorage (set by the index page
+// when the user clicked Details), overriding the PHP fallback.
+(function () {
+  var stored = sessionStorage.getItem('ph-back');
+  if (stored) {
+    var link = document.getElementById('back-link');
+    if (link) link.href = stored;
+  }
+}());
+</script>
 
 <?php if (isset($metaFetchUrl) && $metaFetchUrl !== null && $notes === null): ?>
 <script>
