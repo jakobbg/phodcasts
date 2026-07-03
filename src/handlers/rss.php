@@ -26,9 +26,34 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     header('Cache-Control: no-cache, no-store, must-revalidate');
     send_security_headers('rss');
 
-    // Enrich audiobook feeds with a description from Open Library when enabled.
+    // Build feed description: user notes (highest priority) → Open Library → default.
     $feedDesc = "Podcast feed for {$name}";
-    if ($type === 'book' && FETCH_BOOK_METADATA) {
+
+    // Check all three notes paths (manual feed dir, current cache hash, legacy hash).
+    $notesFound = null;
+    foreach ([
+        $feedDir . DIRECTORY_SEPARATOR . 'notes.md',
+        __DIR__ . '/../../cache/notes/' . sha1($feedDir) . '.md',
+        __DIR__ . '/../../cache/notes/' . sha1($feed)    . '.md',
+    ] as $nc) {
+        if (is_file($nc) && is_readable($nc)) {
+            $raw = @file_get_contents($nc);
+            if ($raw !== false && trim($raw) !== '') {
+                $notesFound = trim($raw);
+                break;
+            }
+        }
+    }
+
+    if ($notesFound !== null) {
+        // Strip common Markdown syntax to produce clean plain text for RSS.
+        $plain = preg_replace('/^#{1,6}\s+/m', '', $notesFound);
+        $plain = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $plain);
+        $plain = preg_replace('/[*_`~>]+/', '', $plain);
+        $plain = preg_replace('/^[-*+]\s+/m', '', $plain);
+        $plain = trim(preg_replace('/\s{2,}/', ' ', str_replace(["\r\n", "\n"], ' ', $plain)));
+        if ($plain !== '') $feedDesc = $plain;
+    } elseif ($type === 'book' && FETCH_BOOK_METADATA) {
         $bookMeta = fetch_book_metadata($feed, $name);
         if ($bookMeta !== null && !empty($bookMeta['description'])) {
             $feedDesc = (string)$bookMeta['description'];
