@@ -80,15 +80,21 @@ function render_show_page(string $feed): void {
     // fall back to web-saved notes in cache/notes/.
     $notes     = null;
     $notesRaw  = null;
-    $notesPath = $feedDir . DIRECTORY_SEPARATOR . 'notes.md';
-    if (!is_file($notesPath) || !is_readable($notesPath)) {
-        $notesPath = __DIR__ . '/../../cache/notes/' . sha1($feedDir) . '.md';
-    }
-    if (is_file($notesPath) && is_readable($notesPath)) {
-        $raw = @file_get_contents($notesPath);
-        if ($raw !== false) {
-            $notesRaw = $raw;
-            $notes    = render_markdown($raw);
+    // Check in priority order: manual notes.md in feed dir → cache/notes by
+    // feedDir hash (current) → cache/notes by feed string hash (legacy).
+    $notesCandidates = [
+        $feedDir . DIRECTORY_SEPARATOR . 'notes.md',
+        __DIR__ . '/../../cache/notes/' . sha1($feedDir) . '.md',
+        __DIR__ . '/../../cache/notes/' . sha1($feed)    . '.md',
+    ];
+    foreach ($notesCandidates as $notesPath) {
+        if (is_file($notesPath) && is_readable($notesPath)) {
+            $raw = @file_get_contents($notesPath);
+            if ($raw !== false && $raw !== '') {
+                $notesRaw = $raw;
+                $notes    = render_markdown($raw);
+                break;
+            }
         }
     }
 
