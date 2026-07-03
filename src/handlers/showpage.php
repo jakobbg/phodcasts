@@ -82,7 +82,7 @@ function render_show_page(string $feed): void {
     $notesRaw  = null;
     $notesPath = $feedDir . DIRECTORY_SEPARATOR . 'notes.md';
     if (!is_file($notesPath) || !is_readable($notesPath)) {
-        $notesPath = __DIR__ . '/../../cache/notes/' . sha1($feed) . '.md';
+        $notesPath = __DIR__ . '/../../cache/notes/' . sha1($feedDir) . '.md';
     }
     if (is_file($notesPath) && is_readable($notesPath)) {
         $raw = @file_get_contents($notesPath);
