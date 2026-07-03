@@ -460,11 +460,13 @@
         ?>
           <section class="card" aria-label="<?php echo h($f['name']); ?>" data-feed-id="<?php echo h($f['id']); ?>">
             <div class="cover-wrap">
-              <?php if ($coverUrl !== null): ?>
-                <img class="cover" src="<?php echo h($coverUrl); ?>" alt="Cover art for <?php echo h($f['name']); ?>" loading="lazy" />
-              <?php else: ?>
-                <?php echo cover_placeholder_svg($f['name'], $f['name']); ?>
-              <?php endif; ?>
+              <a href="<?php echo h($showUrl); ?>" aria-label="Open details for <?php echo h($f['name']); ?>">
+                <?php if ($coverUrl !== null): ?>
+                  <img class="cover" src="<?php echo h($coverUrl); ?>" alt="Cover art for <?php echo h($f['name']); ?>" loading="lazy" />
+                <?php else: ?>
+                  <?php echo cover_placeholder_svg($f['name'], $f['name']); ?>
+                <?php endif; ?>
+              </a>
               <button class="cover-copy-btn" onclick="copyRssFeed(this,'<?php echo h(addslashes($rss)); ?>')" title="Copy RSS feed URL" aria-label="Copy RSS feed URL for <?php echo h($f['name']); ?>"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
             </div>
             <span class="type-badge <?php echo $badgeClass; ?>"><span aria-hidden="true"><?php echo $badgeEmoji; ?></span> <?php echo h($badgeLabel); ?></span>
