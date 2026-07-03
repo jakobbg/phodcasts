@@ -67,6 +67,7 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     if (stripos($feedDesc, APP_QUIP) === false && stripos($feedDesc, $rssQuip) === false) {
         $feedDesc = rtrim($feedDesc, ". \t\n\r\0\x0B") . '. ' . $rssQuip;
     }
+    $feedSubtitle = mb_substr($feedDesc, 0, 255, 'UTF-8');
 
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     echo "<rss version=\"2.0\" xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n";
@@ -82,6 +83,7 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     echo "    <itunes:author>" . h($name) . "</itunes:author>\n";
     echo "    <itunes:explicit>false</itunes:explicit>\n";
     echo "    <itunes:category text=\"" . h($type === 'book' ? 'Fiction' : 'Society &amp; Culture') . "\" />\n";
+    echo "    <itunes:subtitle>" . h($feedSubtitle) . "</itunes:subtitle>\n";
     echo "    <itunes:summary>" . h($feedDesc) . "</itunes:summary>\n";
     if ($imgUrl !== null) {
         // Standard RSS image block
@@ -96,6 +98,9 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     foreach ($items as $it) {
         $title = episode_title($it['rel'], $name);
         $enclosure = media_url($feed, $it['rel']);
+        // Reuse the feed-level description for item summaries so clients that
+        // prioritize item metadata still show the editable show description.
+        $itemSummary = $feedDesc;
         // Stable GUID: based only on feed name + relative path, not mtime/size.
         $guid = sha1($feed . '|' . $it['rel']);
         $pubTs = (int)($it['pub_ts'] ?? $it['mtime']);
@@ -105,8 +110,9 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
         echo "      <pubDate>" . gmdate(DATE_RSS, $pubTs) . "</pubDate>\n";
         echo "      <guid isPermaLink=\"false\">" . h($guid) . "</guid>\n";
         echo "      <link>" . h($enclosure) . "</link>\n";
-        echo "      <description>" . h($title) . "</description>\n";
+        echo "      <description>" . h($itemSummary) . "</description>\n";
         echo "      <itunes:title>" . h($title) . "</itunes:title>\n";
+        echo "      <itunes:summary>" . h($itemSummary) . "</itunes:summary>\n";
         echo "      <itunes:explicit>false</itunes:explicit>\n";
         if ($imgUrl !== null) {
             echo "      <itunes:image href=\"" . h($imgUrl) . "\" />\n";
