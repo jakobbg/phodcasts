@@ -102,9 +102,11 @@
   .show-brand:hover { opacity: 1; color: var(--text); }
 
   @media (prefers-color-scheme: light) {
-    html:not([data-theme="dark"]) .show-brand { color: rgba(15,23,42,.78); opacity: .9; }
+    html:not([data-theme="dark"]) .back { color: rgba(15,23,42,.82); }
+    html:not([data-theme="dark"]) .show-brand { color: rgba(15,23,42,.90); opacity: 1; }
   }
-  html[data-theme="light"] .show-brand { color: rgba(15,23,42,.78); opacity: .9; }
+  html[data-theme="light"] .back { color: rgba(15,23,42,.82); }
+  html[data-theme="light"] .show-brand { color: rgba(15,23,42,.90); opacity: 1; }
 
   /* Hero card */
   .hero { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap;
@@ -441,10 +443,10 @@
 
   @media (prefers-color-scheme: light) {
     html:not([data-theme="dark"]) .divider { background: linear-gradient(90deg, transparent, rgba(15,23,42,.18), transparent); }
-    html:not([data-theme="dark"]) .site-footer { color: rgba(15,23,42,.76); opacity: .96; }
+    html:not([data-theme="dark"]) .site-footer { color: rgba(15,23,42,.86); opacity: 1; }
   }
   html[data-theme="light"] .divider { background: linear-gradient(90deg, transparent, rgba(15,23,42,.18), transparent); }
-  html[data-theme="light"] .site-footer { color: rgba(15,23,42,.76); opacity: .96; }
+  html[data-theme="light"] .site-footer { color: rgba(15,23,42,.86); opacity: 1; }
   </style>
   <script defer src="<?= h($assetBase . 'js/theme.js') ?>"></script>
 </head>

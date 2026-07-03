@@ -142,6 +142,11 @@
     font-size: clamp(28px, 4vw, 40px);
   }
 
+  .app-title-sub {
+    font-weight: 400;
+    opacity: .6;
+  }
+
   .sub {
     margin: 0;
     color: var(--muted);
@@ -329,8 +334,10 @@
     html:not([data-theme="dark"]) .divider { background: linear-gradient(90deg, transparent, rgba(15,23,42,.18), transparent); }
     html:not([data-theme="dark"]) .hero { background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.75)); }
     html:not([data-theme="dark"]) code { background: rgba(15,23,42,.04); }
-    html:not([data-theme="dark"]) .site-footer { color: rgba(15,23,42,.76); }
-    html:not([data-theme="dark"]) .site-footer .brand-note { color: rgba(15,23,42,.80); opacity: .96; }
+    html:not([data-theme="dark"]) #app-title { color: rgba(15,23,42,.96); }
+    html:not([data-theme="dark"]) .app-title-sub { color: rgba(15,23,42,.78); opacity: 1; }
+    html:not([data-theme="dark"]) .site-footer { color: rgba(15,23,42,.86); }
+    html:not([data-theme="dark"]) .site-footer .brand-note { color: rgba(15,23,42,.88); opacity: 1; }
     html:not([data-theme="dark"]) .btn { background: rgba(255,255,255,.75); }
     html:not([data-theme="dark"]) .btn.primary {
       border-color: rgba(124,58,237,.55);
@@ -345,8 +352,10 @@
   html[data-theme="light"] .divider { background: linear-gradient(90deg, transparent, rgba(15,23,42,.18), transparent); }
   html[data-theme="light"] .hero { background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.75)); }
   html[data-theme="light"] code { background: rgba(15,23,42,.04); }
-  html[data-theme="light"] .site-footer { color: rgba(15,23,42,.76); }
-  html[data-theme="light"] .site-footer .brand-note { color: rgba(15,23,42,.80); opacity: .96; }
+  html[data-theme="light"] #app-title { color: rgba(15,23,42,.96); }
+  html[data-theme="light"] .app-title-sub { color: rgba(15,23,42,.78); opacity: 1; }
+  html[data-theme="light"] .site-footer { color: rgba(15,23,42,.86); }
+  html[data-theme="light"] .site-footer .brand-note { color: rgba(15,23,42,.88); opacity: 1; }
   html[data-theme="light"] .btn { background: rgba(255,255,255,.75); }
   html[data-theme="light"] .btn.primary {
     border-color: rgba(124,58,237,.55);
@@ -426,7 +435,7 @@
           title="<?= h($versionTip) ?>"
           style="cursor:pointer"
           aria-label="<?= h($versionTip) ?>, click to copy commit link"
-          ><span id="app-brand"><?= h(APP_NAME) ?></span> <span style="font-weight:400;opacity:.6">&mdash; Podcast &amp; Audiobook Feeds</span></h1>
+          ><span id="app-brand"><?= h(APP_NAME) ?></span> <span class="app-title-sub">&mdash; Podcast &amp; Audiobook Feeds</span></h1>
       <p class="sub"><?= h(APP_QUIP) ?></p>
     </header>
 
