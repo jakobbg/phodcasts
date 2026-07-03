@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 // ── Internal app metadata (not user-configurable) ────────────────────────────
 const MAX_ITEMS   = 200;
-const APP_VERSION = 'v1.2';
+const APP_VERSION = 'v1.3';
 const REPO_URL    = 'https://github.com/jakobbg/phodcasts';
 
 // ── Load user settings from config/config.json ───────────────────────────────
