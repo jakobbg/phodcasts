@@ -16,8 +16,5 @@ const TRUSTED_PROXY_CIDRS = ['127.0.0.1/32', '::1/128'];
 // cache/metadata/. Delete a cache file to force a refresh for that feed.
 const FETCH_BOOK_METADATA = true;
 
-// Number of feeds shown per page on the index.
-const FEEDS_PER_PAGE = 9;
-
 const APP_VERSION = 'v1.2';
 const REPO_URL    = 'https://github.com/jakobbg/phodcasts';

@@ -332,23 +332,6 @@
   html[data-theme="light"] .type-badge.book    { background: rgba(6,182,212,.10);  color: #0e7490; border-color: rgba(6,182,212,.25); }
   html[data-theme="light"] .filter-btn         { background: rgba(255,255,255,.75); }
 
-  /* Pager */
-  .pager {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin: 20px 0 6px;
-    flex-wrap: wrap;
-  }
-  .pager-info {
-    font-size: 14px;
-    color: var(--muted);
-    min-width: 120px;
-    text-align: center;
-  }
-  .pager .btn[aria-disabled="true"] { opacity: .4; cursor: default; }
-
   /* Theme toggle button */
   .theme-toggle {
     position: fixed; top: 14px; right: 16px; z-index: 50;
@@ -426,17 +409,12 @@
       ?>
         <a class="filter-btn<?php echo $active; ?>" href="<?php echo h($href); ?>" title="<?php echo h($info['title']); ?>"<?php echo $aria; ?>><span aria-hidden="true"><?php echo $info['icon']; ?></span> <?php echo h($info['text']); ?></a>
       <?php endforeach; ?>
-      <form class="search-wrap" role="search">
-        <input type="hidden" name="filter" value="<?php echo h($filter); ?>">
-        <input type="search" id="feed-search" class="search-input" name="q"
+      <div class="search-wrap" role="search">
+        <input type="search" id="feed-search" class="search-input"
                placeholder="Search…" value="<?php echo h($query); ?>"
                list="feed-names" autocomplete="on" spellcheck="false" aria-label="Search feeds">
-        <?php if ($query !== ''): ?>
-          <a href="<?php echo h($base . '?' . http_build_query(['filter' => $filter])); ?>" class="search-action search-clear" aria-label="Clear search">&#x2715;</a>
-        <?php else: ?>
-          <button type="submit" class="search-action search-btn" aria-label="Search feeds"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></button>
-        <?php endif; ?>
-      </form>
+        <button type="button" id="search-clear" class="search-action search-clear" aria-label="Clear search"<?php echo $query === '' ? ' hidden' : ''; ?>>&#x2715;</button>
+      </div>
       <datalist id="feed-names">
         <?php foreach ($allFeedNames as $n): ?><option value="<?= h($n) ?>"><?php endforeach; ?>
       </datalist>
@@ -445,7 +423,7 @@
     <main id="main-content">
 
     <?php if (empty($feeds)): ?>
-      <div class="card"><?php echo $query !== '' ? 'No feeds matching “' . h($query) . '”.' : 'No subfolders found (or not readable) for the selected filter.'; ?></div>
+      <div class="card">No subfolders found (or not readable) for the selected filter.</div>
     <?php else: ?>
       <div class="grid">
         <?php foreach ($feeds as $f):
@@ -461,7 +439,6 @@
           $backParams = [];
           if ($filter !== 'all') $backParams['filter'] = $filter;
           if ($query !== '')     $backParams['q']      = $query;
-          if ($page > 1)         $backParams['page']   = $page;
           $returnTo = '/' . ($backParams ? '?' . http_build_query($backParams) : '');
           $showUrl  = $assetBase . 'show/' . $encodedId . '?return_to=' . rawurlencode($returnTo);
 
@@ -501,22 +478,7 @@
           </section>
         <?php endforeach; ?>
       </div>
-    <?php endif; ?>
-
-    <?php if ($totalPages > 1): ?>
-    <nav class="pager" aria-label="Page navigation">
-      <?php if ($page > 1): ?>
-        <a href="<?php echo h($base . '?' . http_build_query($pageBase + ['page' => $page - 1])); ?>" class="btn" aria-label="Previous page">&#x2190; Prev</a>
-      <?php else: ?>
-        <span class="btn" aria-disabled="true">&#x2190; Prev</span>
-      <?php endif; ?>
-      <span class="pager-info"><?php if ($query !== ''): ?><span style="margin-right:6px;color:var(--accent)">&ldquo;<?php echo h($query); ?>&rdquo;</span><?php endif; ?>Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
-      <?php if ($page < $totalPages): ?>
-        <a href="<?php echo h($base . '?' . http_build_query($pageBase + ['page' => $page + 1])); ?>" class="btn" aria-label="Next page">Next &#x2192;</a>
-      <?php else: ?>
-        <span class="btn" aria-disabled="true">Next &#x2192;</span>
-      <?php endif; ?>
-    </nav>
+      <div id="filter-empty" class="card" style="display:none; margin-top: 14px;">No visible feeds match this search.</div>
     <?php endif; ?>
 
     </main>
@@ -571,24 +533,32 @@ function copyFeed(btn, url) {
 }());
 (function () {
   var inp = document.getElementById('feed-search');
+  var clearBtn = document.getElementById('search-clear');
+  var noMatch = document.getElementById('filter-empty');
   if (!inp) return;
   function filterCards(q) {
     q = q.toLowerCase().trim();
+    var visible = 0;
     document.querySelectorAll('.grid section.card').forEach(function (card) {
       var h2 = card.querySelector('h2');
       var title = h2 ? h2.textContent.toLowerCase() : '';
-      card.style.display = (!q || title.indexOf(q) !== -1) ? '' : 'none';
+      var show = !q || title.indexOf(q) !== -1;
+      card.style.display = show ? '' : 'none';
+      if (show) visible += 1;
+    });
+    if (clearBtn) clearBtn.hidden = q === '';
+    if (noMatch) noMatch.style.display = (q !== '' && visible === 0) ? '' : 'none';
+  }
+  inp.addEventListener('input', function () {
+    filterCards(inp.value);
+  });
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function () {
+      inp.value = '';
+      filterCards('');
+      inp.focus();
     });
   }
-  var debounce;
-  inp.addEventListener('input', function () {
-    filterCards(inp.value);          // instant feedback for visible cards
-    clearTimeout(debounce);
-    debounce = setTimeout(function () {
-      var form = inp.closest('form');
-      if (form) form.submit();       // full server search across all pages
-    }, 380);
-  });
   if (inp.value) filterCards(inp.value);
 }());
 // Remember current page URL so the show detail page can navigate back here.
