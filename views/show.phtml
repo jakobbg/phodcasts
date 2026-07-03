@@ -28,14 +28,14 @@
   <!-- Open Graph -->
   <meta property="og:type"        content="website">
   <meta property="og:site_name"   content="<?= h(APP_NAME) ?>">
-  <meta property="og:title"       content="<?= h($displayTitle) ?>">
+  <meta property="og:title"       content="<?= h(APP_NAME . ': ' . $displayTitle) ?>">
   <meta property="og:description" content="<?= h($ogDescription) ?>">
   <meta property="og:url"         content="<?= h($showPageUrl) ?>">
   <meta property="og:image"       content="<?= h($ogImageUrl) ?>">
 
   <!-- Twitter / X card -->
   <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="<?= h($displayTitle) ?>">
+  <meta name="twitter:title"       content="<?= h(APP_NAME . ': ' . $displayTitle) ?>">
   <meta name="twitter:description" content="<?= h($ogDescription) ?>">
   <meta name="twitter:image"       content="<?= h($ogImageUrl) ?>">
 

@@ -17,7 +17,7 @@
   <!-- Open Graph - iMessage / Slack / Discord link previews -->
   <meta property="og:type"        content="website">
   <meta property="og:site_name"   content="<?= h(APP_NAME) ?>">
-  <meta property="og:title"       content="<?= h(APP_NAME) ?>">
+  <meta property="og:title"       content="<?= h(APP_NAME . ': ' . APP_QUIP) ?>">
   <meta property="og:description" content="Your podcasts &amp; audiobooks, streamed from your own server. <?= h(APP_QUIP) ?>">
   <meta property="og:url"         content="<?= h($base) ?>">
   <meta property="og:image"       content="<?= h($ogImageUrl) ?>">
@@ -27,7 +27,7 @@
 
   <!-- Twitter / X card (also used by some other clients) -->
   <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="<?= h(APP_NAME) ?>">
+  <meta name="twitter:title"       content="<?= h(APP_NAME . ': ' . APP_QUIP) ?>">
   <meta name="twitter:description" content="Your podcasts &amp; audiobooks, streamed from your own server. <?= h(APP_QUIP) ?>">
   <meta name="twitter:image"       content="<?= h($ogImageUrl) ?>">
   <script>(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
