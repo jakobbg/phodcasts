@@ -577,7 +577,15 @@ function copyFeed(btn, url) {
       card.style.display = (!q || title.indexOf(q) !== -1) ? '' : 'none';
     });
   }
-  inp.addEventListener('input', function () { filterCards(inp.value); });
+  var debounce;
+  inp.addEventListener('input', function () {
+    filterCards(inp.value);          // instant feedback for visible cards
+    clearTimeout(debounce);
+    debounce = setTimeout(function () {
+      var form = inp.closest('form');
+      if (form) form.submit();       // full server search across all pages
+    }, 380);
+  });
   if (inp.value) filterCards(inp.value);
 }());
 // Remember current page URL so the show detail page can navigate back here.
