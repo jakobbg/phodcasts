@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 function send_image_asset(string $baseDir, string $name): void {
     // Serve known static image assets (fallback if the web server doesn't handle .png directly)
-    $allowed = ['logo.png', 'og.png', 'apple-touch-icon.png', 'favicon.png'];
+    $allowed = ['logo.png', 'og.png', 'apple-touch-icon.png', 'apple-touch-icon-precomposed.png', 'favicon.png'];
     $safeName = basename($name);
     if (!in_array($safeName, $allowed, true)) {
         http_response_code(404);
