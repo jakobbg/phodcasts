@@ -16,6 +16,7 @@ $requiredPaths = [
     'src/handlers/showpage.php',
     'tests/utils_smoke.php',
     'tests/markdown_smoke.php',
+    'tests/rss_smoke.php',
     'views/show.phtml',
     'src/title/library.php',
     'src/handlers/rss.php',
