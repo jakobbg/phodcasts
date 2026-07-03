@@ -162,6 +162,9 @@
     gap: 14px;
     margin-top: 14px;
   }
+  .grid.single-visible {
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+  }
 
   .card {
     border: 1px solid var(--cardBorder);
@@ -412,12 +415,9 @@
       <div class="search-wrap" role="search">
         <input type="search" id="feed-search" class="search-input"
                placeholder="Search…" value="<?php echo h($query); ?>"
-               list="feed-names" autocomplete="on" spellcheck="false" aria-label="Search feeds">
+               autocomplete="off" spellcheck="false" aria-label="Search feeds">
         <button type="button" id="search-clear" class="search-action search-clear" aria-label="Clear search"<?php echo $query === '' ? ' hidden' : ''; ?>>&#x2715;</button>
       </div>
-      <datalist id="feed-names">
-        <?php foreach ($allFeedNames as $n): ?><option value="<?= h($n) ?>"><?php endforeach; ?>
-      </datalist>
     </nav>
 
     <main id="main-content">
@@ -535,6 +535,7 @@ function copyFeed(btn, url) {
   var inp = document.getElementById('feed-search');
   var clearBtn = document.getElementById('search-clear');
   var noMatch = document.getElementById('filter-empty');
+  var grid = document.querySelector('.grid');
   if (!inp) return;
   function filterCards(q) {
     q = q.toLowerCase().trim();
@@ -548,6 +549,7 @@ function copyFeed(btn, url) {
     });
     if (clearBtn) clearBtn.hidden = q === '';
     if (noMatch) noMatch.style.display = (q !== '' && visible === 0) ? '' : 'none';
+    if (grid) grid.classList.toggle('single-visible', visible === 1);
   }
   inp.addEventListener('input', function () {
     filterCards(inp.value);

@@ -9,10 +9,6 @@ function render_index_page(string $filter): void {
 
     $feeds = list_podcasts($filter);
 
-    // All feed names across every filter for the search datalist (fast — no
-    // recursive scans, just scandir of top-level directories).
-    $allFeedNames = array_map(fn($f) => $f['name'], list_podcasts('all'));
-
     // Strip feeds that have no downloaded content.
     $feeds = array_values(array_filter($feeds, static function (array $f): bool {
         return feed_has_content($f['dir']);
