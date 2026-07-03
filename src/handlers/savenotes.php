@@ -52,7 +52,7 @@ function save_notes_handler(string $feed, string $content): void {
         }
     }
     $notesPath = $cacheDir . sha1($feedDir) . '.md';
-    if (file_put_contents($notesPath, $content, LOCK_EX) === false) {
+    if (file_put_contents($notesPath, $content) === false) {
         http_response_code(500);
         echo json_encode(['ok' => false, 'error' => 'Write failed — check directory permissions']);
         return;
