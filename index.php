@@ -32,6 +32,12 @@ if ($action === 'meta') {
     exit;
 }
 
+if ($action === 'save_notes') {
+    $content = (string)($_POST['content'] ?? '');
+    save_notes_handler($feed, $content);
+    exit;
+}
+
 if ($feed !== '') {
     $feedDir = resolve_feed_dir($feed);
     if ($feedDir === null) {

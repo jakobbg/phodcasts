@@ -224,6 +224,24 @@
   .desc-body hr { border: none; border-top: 1px solid var(--cardBorder); margin: 1em 0; }
   .desc-body a { color: #a78bfa; text-decoration: underline; text-underline-offset: 2px; }
 
+  /* Add-description form */
+  .add-desc-toggle {
+    background: none; border: 1px dashed var(--cardBorder); border-radius: 10px;
+    color: var(--muted); cursor: pointer; font-size: 14px; padding: 10px 16px;
+    width: 100%; text-align: left; transition: border-color .12s, color .12s;
+  }
+  .add-desc-toggle:hover { border-color: var(--accent); color: var(--text); }
+  .notes-textarea {
+    width: 100%; padding: 10px 12px; margin-top: 10px;
+    border-radius: 10px; border: 1px solid var(--cardBorder);
+    background: rgba(255,255,255,.06); color: var(--text);
+    font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
+    resize: vertical; outline: none; box-sizing: border-box;
+  }
+  .notes-textarea:focus { border-color: rgba(124,58,237,.55); background: rgba(255,255,255,.08); }
+  .add-desc-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .add-desc-error { color: #f87171; font-size: 13px; margin-top: 6px; }
+
   /* Episode table */
   .episodes-card {
     padding: 0; margin-bottom: 24px;
@@ -477,10 +495,12 @@
     $hasDesc     = $notes !== null || ($meta !== null && !empty($meta['description']));
     $hasMetaInfo = $meta !== null && !empty($meta['found']);
     $willFetch   = isset($metaFetchUrl) && $metaFetchUrl !== null;
+    $canAdd      = !$hasDesc && !$hasMetaInfo && !$willFetch;
+    $saveUrl     = $base . '?' . http_build_query(['action' => 'save_notes', 'feed' => $feed]);
   ?>
-  <?php if ($hasDesc || $hasMetaInfo || $willFetch): ?>
+  <?php if ($hasDesc || $hasMetaInfo || $willFetch || $canAdd): ?>
   <div class="desc-card">
-    <h2 id="desc-heading"><?= $notes !== null ? 'Notes' : 'About' ?></h2>
+    <h2 id="desc-heading"><?= $notes !== null ? 'Notes' : ($canAdd ? 'Description' : 'About') ?></h2>
     <div class="desc-body">
       <?php if ($notes !== null): ?>
         <?= $notes ?>
@@ -490,6 +510,18 @@
         <p>Metadata was found on Open Library, but no description is available for this title.</p>
       <?php elseif ($willFetch): ?>
         <p id="desc-loading" style="color:var(--muted);font-size:14px">Loading description…</p>
+      <?php elseif ($canAdd): ?>
+        <div id="add-desc-wrap">
+          <button class="add-desc-toggle" id="add-desc-btn" onclick="document.getElementById('add-desc-form').style.display='block';this.style.display='none'">+ Add description</button>
+          <div id="add-desc-form" style="display:none">
+            <textarea class="notes-textarea" id="add-desc-ta" rows="6" placeholder="Paste or type Markdown or plain text…"></textarea>
+            <div class="add-desc-actions">
+              <button class="btn primary" onclick="saveNotes()">Save</button>
+              <button class="btn" onclick="document.getElementById('add-desc-form').style.display='none';document.getElementById('add-desc-btn').style.display=''">Cancel</button>
+            </div>
+            <p class="add-desc-error" id="add-desc-err" style="display:none"></p>
+          </div>
+        </div>
       <?php endif; ?>
     </div>
   </div>
@@ -597,6 +629,27 @@
     if (link) link.href = stored;
   }
 }());
+
+<?php if (isset($canAdd) && $canAdd): ?>
+function saveNotes() {
+  var ta  = document.getElementById('add-desc-ta');
+  var err = document.getElementById('add-desc-err');
+  if (!ta.value.trim()) {
+    err.textContent = 'Please enter some content first.';
+    err.style.display = 'block';
+    return;
+  }
+  var body = new URLSearchParams();
+  body.append('content', ta.value);
+  fetch('<?= h($saveUrl) ?>', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body.toString()})
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.ok) { window.location.reload(); }
+      else { err.textContent = d.error || 'Save failed.'; err.style.display = 'block'; }
+    })
+    .catch(function () { err.textContent = 'Network error — check server logs.'; err.style.display = 'block'; });
+}
+<?php endif; ?>
 </script>
 
 <?php if (isset($metaFetchUrl) && $metaFetchUrl !== null): ?>

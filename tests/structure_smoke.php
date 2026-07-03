@@ -19,6 +19,7 @@ $requiredPaths = [
     'src/title/library.php',
     'src/handlers/rss.php',
     'src/handlers/media.php',
+    'src/handlers/savenotes.php',
     'src/handlers/metadatajson.php',
     'src/handlers/assets.php',
     'src/handlers/indexpage.php',
