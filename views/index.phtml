@@ -374,7 +374,15 @@
   html[data-theme="light"] .search-input { background: rgba(255,255,255,.75); }
   @media (max-width: 500px) {
     .filter-bar { flex-wrap: wrap; }
-    .search-wrap { width: 100%; flex: 0 0 100%; }
+    .filter-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      justify-content: center;
+      white-space: nowrap;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+    .search-wrap { width: 100%; flex: 0 0 100%; order: 2; }
     .search-wrap { margin-left: 0; }
     .search-input, .search-input:focus { width: 100%; }
   }
