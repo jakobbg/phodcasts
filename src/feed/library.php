@@ -191,13 +191,61 @@ function find_media_files(string $feedDir, string $type = 'podcast'): array {
     return $files;
 }
 
-function discover_image(string $feedDir): ?string {
-    // Per-podcast artwork: check common filenames in priority order.
-    foreach (['cover.jpg', 'cover.png', 'folder.jpg', 'folder.png'] as $candidate) {
-        $p = $feedDir . DIRECTORY_SEPARATOR . $candidate;
-        if (is_file($p) && is_readable($p)) return $p;
+/**
+ * Discover image files in the feed directory and return absolute paths sorted
+ * by best cover candidate first (largest pixel area, then file size).
+ */
+function discover_images(string $feedDir): array {
+    if (!is_dir($feedDir) || !is_readable($feedDir)) return [];
+
+    $allowedExt = [
+        'jpg' => true,
+        'jpeg' => true,
+        'png' => true,
+        'webp' => true,
+        'gif' => true,
+    ];
+
+    $candidates = [];
+    foreach (scandir($feedDir) ?: [] as $name) {
+        if ($name === '.' || $name === '..') continue;
+        if ($name[0] === '.') continue;
+
+        $path = $feedDir . DIRECTORY_SEPARATOR . $name;
+        if (!is_file($path) || !is_readable($path)) continue;
+
+        $ext = strtolower((string)pathinfo($name, PATHINFO_EXTENSION));
+        if (!isset($allowedExt[$ext])) continue;
+
+        $size = @filesize($path);
+        $size = $size === false ? 0 : (int)$size;
+
+        $dim = @getimagesize($path);
+        if (!is_array($dim) || empty($dim[0]) || empty($dim[1])) continue;
+        $width = (int)$dim[0];
+        $height = (int)$dim[1];
+        $area = $width * $height;
+
+        $candidates[] = [
+            'path' => $path,
+            'area' => $area,
+            'size' => $size,
+            'name' => $name,
+        ];
     }
-    return null;
+
+    usort($candidates, static function (array $a, array $b): int {
+        if ($a['area'] !== $b['area']) return $b['area'] <=> $a['area'];
+        if ($a['size'] !== $b['size']) return $b['size'] <=> $a['size'];
+        return strnatcasecmp($a['name'], $b['name']);
+    });
+
+    return array_values(array_map(static fn(array $c): string => $c['path'], $candidates));
+}
+
+function discover_image(string $feedDir): ?string {
+    $images = discover_images($feedDir);
+    return $images[0] ?? null;
 }
 
 function pubdate_from_filename(string $relPath): ?int {

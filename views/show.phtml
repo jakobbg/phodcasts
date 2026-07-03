@@ -105,13 +105,49 @@
     border-radius: var(--radius); backdrop-filter: blur(10px);
     box-shadow: 0 18px 60px var(--shadow); }
 
-  .cover {
+  .cover-wrap {
     width: 180px; height: 180px; flex-shrink: 0;
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .cover {
+    width: 100%; height: 100%;
     object-fit: cover; border-radius: 12px; border: 1px solid var(--cardBorder);
     background: rgba(255,255,255,.06);
+    aspect-ratio: 1 / 1;
   }
 
   .cover-placeholder { flex-shrink: 0; }
+
+  .cover-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.30);
+    background: rgba(0,0,0,.45);
+    color: rgba(255,255,255,.92);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .12s ease, background .12s ease;
+  }
+  .cover-nav.prev { left: 8px; }
+  .cover-nav.next { right: 8px; }
+  .cover-wrap:hover .cover-nav,
+  .cover-wrap:focus-within .cover-nav {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .cover-nav:hover { background: rgba(0,0,0,.68); }
+  .cover-nav:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; opacity: 1; pointer-events: auto; }
 
   .hero-body { flex: 1; min-width: 200px; }
 
@@ -236,7 +272,8 @@
   html[data-theme="light"] .fmt-badge { background: rgba(124,58,237,.10); color: #6d28d9; border-color: rgba(124,58,237,.22); }
 
   @media (max-width: 600px) {
-    .cover, .cover-placeholder { width: 110px; height: 110px; }
+    .cover-wrap { width: 110px; height: 110px; }
+    .cover, .cover-placeholder { width: 100%; height: 100%; }
     .stat-val { font-size: 16px; }
     .th-kbps, .td-kbps, .th-dt, .td-dt { display: none; }
   }
@@ -373,11 +410,17 @@
   </div>
 
   <div class="hero">
-    <?php if ($coverUrl !== null): ?>
-      <img class="cover" src="<?= h($coverUrl) ?>" alt="Cover art for <?= h($name) ?>">
-    <?php else: ?>
-      <?= cover_placeholder_svg($displayTitle, $name) ?>
-    <?php endif; ?>
+    <div class="cover-wrap">
+      <?php if ($coverUrl !== null): ?>
+        <img id="show-cover-image" class="cover" src="<?= h($coverUrl) ?>" alt="Cover art for <?= h($name) ?>">
+        <?php if (count($coverUrls) > 1): ?>
+          <button type="button" class="cover-nav prev" id="cover-prev" aria-label="Previous cover image">&#x2039;</button>
+          <button type="button" class="cover-nav next" id="cover-next" aria-label="Next cover image">&#x203A;</button>
+        <?php endif; ?>
+      <?php else: ?>
+        <?= cover_placeholder_svg($displayTitle, $name) ?>
+      <?php endif; ?>
+    </div>
 
     <div class="hero-body">
       <span class="type-badge <?= h($feedType) ?>">
@@ -522,6 +565,26 @@
 </div>
 
 <script>
+<?php if (!empty($coverUrls)): ?>
+(function () {
+  var images = <?= json_encode(array_values($coverUrls), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+  if (!Array.isArray(images) || images.length < 2) return;
+  var img = document.getElementById('show-cover-image');
+  var prev = document.getElementById('cover-prev');
+  var next = document.getElementById('cover-next');
+  if (!img || !prev || !next) return;
+
+  var idx = 0;
+  function showAt(nextIdx) {
+    idx = (nextIdx + images.length) % images.length;
+    img.src = images[idx];
+  }
+
+  prev.addEventListener('click', function () { showAt(idx - 1); });
+  next.addEventListener('click', function () { showAt(idx + 1); });
+}());
+<?php endif; ?>
+
 // Restore the back-link URL from sessionStorage (set by the index page
 // when the user clicked Details), overriding the PHP fallback.
 (function () {
@@ -839,10 +902,13 @@ autoBtn.addEventListener('click', function() {
     css += '.desc-body a{color:hsl(' + hue + ',80%,72%)}';
     css += '.desc-body blockquote{border-left-color:hsl(' + hue + ',70%,55%);background:hsla(' + hue + ',70%,50%,.08)}';
 
-    var el = document.createElement('style');
-    el.id = 'cover-theme';
+    var el = document.getElementById('cover-theme');
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'cover-theme';
+      document.head.appendChild(el);
+    }
     el.textContent = css;
-    document.head.appendChild(el);
   }
 
   function run() {

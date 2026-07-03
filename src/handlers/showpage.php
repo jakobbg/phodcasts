@@ -111,9 +111,10 @@ function render_show_page(string $feed): void {
     $totalDuration = !empty($durations) ? (float)array_sum($durations) : null;
     $episodeCount  = count($mediaFiles);
 
-    // Cover image URL.
-    $coverImgPath = discover_image($feedDir);
-    $coverUrl     = $coverImgPath !== null ? media_url($feed, basename($coverImgPath)) : null;
+    // Cover images (largest image first).
+    $coverImgPaths = discover_images($feedDir);
+    $coverUrls     = array_map(static fn(string $p): string => media_url($feed, basename($p)), $coverImgPaths);
+    $coverUrl      = $coverUrls[0] ?? null;
 
     // Newest episode date.
     $newestTs    = null;
