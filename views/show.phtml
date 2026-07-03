@@ -495,12 +495,14 @@
     $hasDesc     = $notes !== null || ($meta !== null && !empty($meta['description']));
     $hasMetaInfo = $meta !== null && !empty($meta['found']);
     $willFetch   = isset($metaFetchUrl) && $metaFetchUrl !== null;
-    $canAdd      = !$hasDesc && !$hasMetaInfo && !$willFetch;
+    // Show Add button whenever there is no user-written notes.md and no actual
+    // description yet — regardless of loading/meta state.
+    $canAdd      = !$hasDesc && $notes === null;
     $saveUrl     = $base . '?' . http_build_query(['action' => 'save_notes', 'feed' => $feed]);
   ?>
   <?php if ($hasDesc || $hasMetaInfo || $willFetch || $canAdd): ?>
   <div class="desc-card">
-    <h2 id="desc-heading"><?= $notes !== null ? 'Notes' : ($canAdd ? 'Description' : 'About') ?></h2>
+    <h2 id="desc-heading"><?= $notes !== null ? 'Notes' : ($hasDesc ? 'About' : 'Description') ?></h2>
     <div class="desc-body">
       <?php if ($notes !== null): ?>
         <?= $notes ?>
@@ -510,8 +512,9 @@
         <p>Metadata was found on Open Library, but no description is available for this title.</p>
       <?php elseif ($willFetch): ?>
         <p id="desc-loading" style="color:var(--muted);font-size:14px">Loading description…</p>
-      <?php elseif ($canAdd): ?>
-        <div id="add-desc-wrap">
+      <?php endif; ?>
+      <?php if ($canAdd): ?>
+        <div id="add-desc-wrap" <?= ($willFetch || $hasMetaInfo) ? 'style="margin-top:12px"' : '' ?>>
           <button class="add-desc-toggle" id="add-desc-btn" onclick="document.getElementById('add-desc-form').style.display='block';this.style.display='none'">+ Add description</button>
           <div id="add-desc-form" style="display:none">
             <textarea class="notes-textarea" id="add-desc-ta" rows="6" placeholder="Paste or type Markdown or plain text…"></textarea>
