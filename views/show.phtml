@@ -644,7 +644,7 @@ function saveNotes() {
   }
   var body = new URLSearchParams();
   body.append('content', ta.value);
-  fetch('<?= h($saveUrl) ?>', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body.toString()})
+  fetch(<?= json_encode($saveUrl, JSON_UNESCAPED_SLASHES) ?>, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body.toString()})
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (d.ok) { window.location.reload(); }
