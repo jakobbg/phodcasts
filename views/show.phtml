@@ -501,18 +501,19 @@
     // Show Add button whenever there is no user-written notes.md and no actual
     // description yet — regardless of loading/meta state.
     $canAdd      = !$hasDesc && $notes === null;
-    $canEdit     = ($notes !== null);
+    $canEdit     = true;
+    $seedDesc    = $notesRaw ?? (($meta !== null && !empty($meta['description'])) ? (string)$meta['description'] : '');
     $saveUrl     = $base . '?' . http_build_query(['action' => 'save_notes', 'feed' => $feed]);
   ?>
   <?php if ($hasDesc || $hasMetaInfo || $willFetch || $canAdd): ?>
   <div class="desc-card">
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px">
-      <h2 id="desc-heading" style="margin:0"><?= $notes !== null ? 'Notes' : ($hasDesc ? 'About' : 'Description') ?></h2>
+      <h2 id="desc-heading" style="margin:0">Description</h2>
       <?php if ($canEdit): ?>
         <button class="add-desc-toggle" id="add-desc-btn"
           style="padding:3px 10px;font-size:12px;width:auto;border-style:solid"
           onclick="document.getElementById('add-desc-form').style.display='block';document.getElementById('add-desc-view').style.display='none';this.style.display='none'"
-          >✏ Edit</button>
+          >✏ Edit description</button>
       <?php endif; ?>
     </div>
     <div class="desc-body">
@@ -528,12 +529,9 @@
       <?php endif; ?>
       </div>
       <?php if ($canAdd || $canEdit): ?>
-        <div id="add-desc-wrap" <?= (!$canEdit && ($willFetch || $hasMetaInfo)) ? 'style="margin-top:12px"' : '' ?>>
-          <?php if ($canAdd && !$canEdit): ?>
-          <button class="add-desc-toggle" id="add-desc-btn" onclick="document.getElementById('add-desc-form').style.display='block';this.style.display='none'">+ Add description</button>
-          <?php endif; ?>
+        <div id="add-desc-wrap" <?= (!$hasDesc && ($willFetch || $hasMetaInfo)) ? 'style="margin-top:12px"' : '' ?>>
           <div id="add-desc-form" style="display:none">
-            <textarea class="notes-textarea" id="add-desc-ta" rows="6" placeholder="Paste or type Markdown or plain text…"><?php if ($canEdit && isset($notesRaw)): ?><?= h($notesRaw) ?><?php endif; ?></textarea>
+            <textarea class="notes-textarea" id="add-desc-ta" rows="6" placeholder="Paste or type Markdown or plain text…"><?= h($seedDesc) ?></textarea>
             <div class="add-desc-actions">
               <button class="btn primary" onclick="saveNotes()">Save</button>
               <button class="btn" onclick="document.getElementById('add-desc-form').style.display='none';document.getElementById('add-desc-view').style.display='';document.getElementById('add-desc-btn') && (document.getElementById('add-desc-btn').style.display='')">Cancel</button>
@@ -716,27 +714,31 @@ function saveNotes() {
             var p2 = document.createElement('p');
             p2.textContent = d.description;
             loader.replaceWith(p2);
-            var heading = document.getElementById('desc-heading');
-            if (heading) heading.textContent = 'About';
           } else {
             var p3 = document.createElement('p');
             p3.textContent = 'Metadata was found on Open Library, but no description is available for this title.';
             loader.replaceWith(p3);
-            var heading2 = document.getElementById('desc-heading');
-            if (heading2) heading2.textContent = 'About';
           }
         }
       } else {
-        // No match: remove loading state
+        // No match: keep description card visible so users can still edit.
         var loader2 = document.getElementById('desc-loading');
-        if (loader2) loader2.closest('.desc-card').style.display = 'none';
+        if (loader2) {
+          var p4 = document.createElement('p');
+          p4.textContent = 'No metadata match found. You can add your own description below.';
+          loader2.replaceWith(p4);
+        }
         var sub3 = document.getElementById('show-author');
         if (sub3 && sub3.textContent.includes('Loading')) sub3.remove();
       }
     })
     .catch(function () {
       var loader3 = document.getElementById('desc-loading');
-      if (loader3) loader3.closest('.desc-card').style.display = 'none';
+      if (loader3) {
+        var p5 = document.createElement('p');
+        p5.textContent = 'Description lookup failed. You can add your own description below.';
+        loader3.replaceWith(p5);
+      }
       var sub4 = document.getElementById('show-author');
       if (sub4 && sub4.textContent.includes('Loading')) sub4.remove();
     });
