@@ -18,7 +18,7 @@
   <meta property="og:type"        content="website">
   <meta property="og:site_name"   content="fablr">
   <meta property="og:title"       content="fablr">
-  <meta property="og:description" content="Your podcasts &amp; audiobooks, streamed from your own server.">
+  <meta property="og:description" content="Your podcasts &amp; audiobooks, streamed from your own server. <?= h(APP_QUIP) ?>">
   <meta property="og:url"         content="<?= h($base) ?>">
   <meta property="og:image"       content="<?= h($ogImageUrl) ?>">
   <meta property="og:image:width" content="1200">
@@ -28,7 +28,7 @@
   <!-- Twitter / X card (also used by some other clients) -->
   <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:title"       content="fablr">
-  <meta name="twitter:description" content="Your podcasts &amp; audiobooks, streamed from your own server.">
+  <meta name="twitter:description" content="Your podcasts &amp; audiobooks, streamed from your own server. <?= h(APP_QUIP) ?>">
   <meta name="twitter:image"       content="<?= h($ogImageUrl) ?>">
   <script>(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
   <style>
@@ -395,7 +395,7 @@
           style="cursor:pointer"
           aria-label="<?= h($versionTip) ?>, click to copy commit link"
           ><span id="app-brand">fablr</span> <span style="font-weight:400;opacity:.6">&mdash; Podcast &amp; Audiobook Feeds</span></h1>
-      <p class="sub">Fables on demand. Your audio, your schedule.</p>
+      <p class="sub"><?= h(APP_QUIP) ?></p>
     </header>
 
     <?php

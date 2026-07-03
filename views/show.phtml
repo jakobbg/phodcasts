@@ -18,7 +18,7 @@
   if ($totalDuration !== null) {
       $ogParts[] = format_duration($totalDuration) . ' total';
   }
-  $ogDescription = $typeLabel . ' · ' . implode(' · ', $ogParts);
+  $ogDescription = $typeLabel . ' · ' . implode(' · ', $ogParts) . ' · ' . APP_QUIP;
 ?>
   <title><?= h($displayTitle) ?> – fablr</title>
   <link rel="icon" type="image/png" href="<?= h($assetBase . 'favicon.png') ?>">

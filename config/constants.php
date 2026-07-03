@@ -5,6 +5,7 @@ declare(strict_types=1);
 const MAX_ITEMS   = 200;
 const APP_VERSION = 'v1.4';
 const REPO_URL    = 'https://github.com/jakobbg/fablr';
+const APP_QUIP    = 'Fables on demand. Your audio, your schedule.';
 
 // ── Load user settings from config/config.json ───────────────────────────────
 (static function (): void {
