@@ -70,7 +70,7 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     echo "    <description>" . h($feedDesc) . "</description>\n";
     echo "    <language>" . h(FEED_LANGUAGE) . "</language>\n";
     echo "    <lastBuildDate>" . gmdate(DATE_RSS, $lastBuild) . "</lastBuildDate>\n";
-    echo "    <generator>phodcasts</generator>\n";
+    echo "    <generator>fablr</generator>\n";
     echo "    <atom:link href=\"" . h($self) . "\" rel=\"self\" type=\"application/rss+xml\" />\n";
     // Required by Apple Podcasts
     echo "    <itunes:author>" . h($name) . "</itunes:author>\n";

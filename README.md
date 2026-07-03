@@ -1,7 +1,7 @@
-# phodcasts
+# fablr
 
 <p align="center">
-  <img src="logo.png" alt="phodcasts logo" width="160">
+  <img src="logo.png" alt="fablr logo" width="160">
 </p>
 
 A lightweight PHP server that turns a folder of audio files into podcast-app-compatible RSS feeds. Point it at a directory, and every subfolder becomes a subscribable podcast feed — no database, no dependencies, and minimal configuration.
@@ -149,7 +149,7 @@ Results are best when folders follow the `"Author - Title"` convention. Folders 
 
 ## Security
 
-phodcasts is designed for private self-hosted use. The following controls are in place:
+fablr is designed for private self-hosted use. The following controls are in place:
 
 **Path safety**
 - Feed directory resolution uses `realpath` and verifies the result is exactly one level inside the media root, preventing directory traversal.

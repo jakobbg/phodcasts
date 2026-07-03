@@ -46,12 +46,12 @@ function save_metadata_cache(string $feedId, array $data): void {
             @chmod($root, 0777);
         }
         if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
-            error_log("phodcasts: cannot create metadata cache dir {$dir} — check permissions on cache/");
+            error_log("fablr: cannot create metadata cache dir {$dir} — check permissions on cache/");
             return;
         }
     }
     if (file_put_contents($path, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX) === false) {
-        error_log("phodcasts: cannot write metadata cache {$path} — check permissions on cache/metadata/");
+        error_log("fablr: cannot write metadata cache {$path} — check permissions on cache/metadata/");
     }
 }
 
@@ -60,7 +60,7 @@ function openlibrary_get(string $url): ?array {
         'http' => [
             'timeout'       => 5,
             'ignore_errors' => true,
-            'user_agent'    => 'phodcasts/1.0 (self-hosted audiobook server)',
+            'user_agent'    => 'fablr/1.0 (self-hosted audiobook server)',
             'header'        => "Accept: application/json\r\n",
         ],
     ]);

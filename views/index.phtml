@@ -4,19 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>phodcasts</title>
+  <title>fablr</title>
 
   <!-- Favicon & home-screen icon -->
   <link rel="icon" type="image/png" href="<?= h($faviconUrl) ?>">
   <link rel="apple-touch-icon" href="<?= h($iconUrl) ?>">
-  <meta name="apple-mobile-web-app-title" content="phodcasts">
+  <meta name="apple-mobile-web-app-title" content="fablr">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <!-- Open Graph - iMessage / Slack / Discord link previews -->
   <meta property="og:type"        content="website">
-  <meta property="og:site_name"   content="phodcasts">
-  <meta property="og:title"       content="phodcasts">
+  <meta property="og:site_name"   content="fablr">
+  <meta property="og:title"       content="fablr">
   <meta property="og:description" content="Your podcasts &amp; audiobooks, streamed from your own server.">
   <meta property="og:url"         content="<?= h($base) ?>">
   <meta property="og:image"       content="<?= h($ogImageUrl) ?>">
@@ -26,7 +26,7 @@
 
   <!-- Twitter / X card (also used by some other clients) -->
   <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:title"       content="phodcasts">
+  <meta name="twitter:title"       content="fablr">
   <meta name="twitter:description" content="Your podcasts &amp; audiobooks, streamed from your own server.">
   <meta name="twitter:image"       content="<?= h($ogImageUrl) ?>">
   <script>(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}());</script>
@@ -386,14 +386,14 @@
       <?php
         $commitHash = app_commit_hash();
         $shortHash  = $commitHash !== '' ? substr($commitHash, 0, 7) : '';
-        $versionTip = 'phodcasts ' . APP_VERSION . ($shortHash !== '' ? ' (' . $shortHash . ')' : '');
+        $versionTip = 'fablr ' . APP_VERSION . ($shortHash !== '' ? ' (' . $shortHash . ')' : '');
         $commitUrl  = REPO_URL . ($commitHash !== '' ? '/commit/' . $commitHash : '');
       ?>
       <h1 id="app-title"
           title="<?= h($versionTip) ?>"
           style="cursor:pointer"
           aria-label="<?= h($versionTip) ?>, click to copy commit link"
-          ><span id="app-brand">phodcasts</span> <span style="font-weight:400;opacity:.6">&mdash; Podcast &amp; Audiobook Feeds</span></h1>
+          ><span id="app-brand">fablr</span> <span style="font-weight:400;opacity:.6">&mdash; Podcast &amp; Audiobook Feeds</span></h1>
       <p class="sub">Podcasts in <code><?php echo h(PODCAST_ROOT . '/' . PODCASTS_SUBDIR); ?></code> &middot; Audio Books in <code><?php echo h(PODCAST_ROOT . '/' . BOOKS_SUBDIR); ?></code></p>
     </header>
 

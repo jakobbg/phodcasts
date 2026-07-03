@@ -4,7 +4,7 @@ declare(strict_types=1);
 // ── Internal app metadata (not user-configurable) ────────────────────────────
 const MAX_ITEMS   = 200;
 const APP_VERSION = 'v1.4';
-const REPO_URL    = 'https://github.com/jakobbg/phodcasts';
+const REPO_URL    = 'https://github.com/jakobbg/fablr';
 
 // ── Load user settings from config/config.json ───────────────────────────────
 (static function (): void {

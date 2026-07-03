@@ -42,7 +42,7 @@ $runStream = static function (string $feedDir, string $rel, ?string $range = nul
     ];
 };
 
-$tmpDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phodcasts_smoke_' . bin2hex(random_bytes(4));
+$tmpDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'fablr_smoke_' . bin2hex(random_bytes(4));
 if (!mkdir($tmpDir, 0700, true) && !is_dir($tmpDir)) {
     fwrite(STDERR, "Could not create temp directory\n");
     exit(1);

@@ -28,12 +28,12 @@ function save_episode_cache(string $feedId, array $cache): void {
             @chmod($root, 0777);
         }
         if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
-            error_log("phodcasts: cannot create episode cache dir {$dir} — check permissions on cache/");
+            error_log("fablr: cannot create episode cache dir {$dir} — check permissions on cache/");
             return;
         }
     }
     if (file_put_contents($path, json_encode($cache), LOCK_EX) === false) {
-        error_log("phodcasts: cannot write episode cache {$path} — check permissions on cache/episodes/");
+        error_log("fablr: cannot write episode cache {$path} — check permissions on cache/episodes/");
     }
 }
 

@@ -20,13 +20,13 @@
   }
   $ogDescription = $typeLabel . ' · ' . implode(' · ', $ogParts);
 ?>
-  <title><?= h($displayTitle) ?> – phodcasts</title>
+  <title><?= h($displayTitle) ?> – fablr</title>
   <link rel="icon" type="image/png" href="<?= h($assetBase . 'favicon.png') ?>">
   <link rel="apple-touch-icon" href="<?= h($assetBase . 'apple-touch-icon.png') ?>">
 
   <!-- Open Graph -->
   <meta property="og:type"        content="website">
-  <meta property="og:site_name"   content="phodcasts">
+  <meta property="og:site_name"   content="fablr">
   <meta property="og:title"       content="<?= h($displayTitle) ?>">
   <meta property="og:description" content="<?= h($ogDescription) ?>">
   <meta property="og:url"         content="<?= h($showPageUrl) ?>">
@@ -426,7 +426,7 @@
     <a href="<?= h($backUrl) ?>" class="back" id="back-link"
        onclick="sessionStorage.setItem('ph-scroll', <?= h(json_encode($feed)) ?>)"
        >← Go back</a>
-    <a href="<?= h($assetBase) ?>" class="show-brand">phodcasts</a>
+    <a href="<?= h($assetBase) ?>" class="show-brand">fablr</a>
   </div>
 
   <div class="hero">
@@ -686,7 +686,7 @@ function saveNotes() {
         if (d.title) {
           var h1 = document.getElementById('show-title');
           if (h1) h1.textContent = d.title;
-          document.title = d.title + ' \u2013 phodcasts';
+          document.title = d.title + ' \u2013 fablr';
         }
         // Update / create author-year line
         if (d.author) {
