@@ -5,3 +5,6 @@ cache/notes/
 
 # Per-feed notes written locally on the NAS — never tracked.
 **/notes.md
+
+# Local IDE metadata.
+.idea/
