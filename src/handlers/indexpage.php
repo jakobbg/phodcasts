@@ -18,6 +18,7 @@ function render_index_page(string $filter): void {
     $query = trim((string)($_GET['q'] ?? ''));
 
     $base = base_url();
+    $assetBase = $base;
     $ogImageUrl     = $base . 'og.png';
     $iconUrl        = $base . 'apple-touch-icon.png';
     $faviconUrl     = $base . 'favicon.png';

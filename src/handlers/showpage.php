@@ -51,6 +51,7 @@ function render_show_page(string $feed): void {
     $feedType = str_starts_with($feed, BOOKS_SUBDIR . '/') ? 'book' : 'podcast';
     $name     = basename($feed);
     $base      = base_url();
+    $assetBase = $base;
 
     // Resolve the back-navigation URL from the ?return_to= parameter.
     // Validate strictly: must be a relative path (starts with /, no // or newlines).
