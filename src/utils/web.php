@@ -116,6 +116,14 @@ function h(string $s): string {
     return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function app_quip_sentence(): string {
+    $quip = trim(APP_QUIP);
+    if ($quip === '') {
+        return '';
+    }
+    return preg_match('/[.!?]$/u', $quip) === 1 ? $quip : ($quip . '.');
+}
+
 function human_age(?int $ts): ?string {
     if (empty($ts) || $ts <= 0) {
         return null;
