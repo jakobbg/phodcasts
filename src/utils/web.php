@@ -116,22 +116,57 @@ function base_url(): string {
 }
 
 /**
+ * Path to a small on-disk flag that records whether we've ever actually
+ * observed a rewritten "show/" or "feed/" URL reach this application.
+ */
+function rewrite_confirmed_flag_path(): string {
+    return __DIR__ . '/../../cache/.rewrite_confirmed';
+}
+
+/**
  * Detect if the server environment supports "clean" URLs via URL rewriting.
- * If the current request explicitly includes 'index.php', we assume rewriting
- * is not available and fall back to query-string based URLs for compatibility.
+ *
+ * The absence of 'index.php' from the request URI is NOT reliable proof that
+ * mod_rewrite/.htaccess is active: Apache's DirectoryIndex serves index.php
+ * for the plain "/" request regardless of whether rewriting (and therefore
+ * "/show/..." or "/feed/..." routes) actually works. Relying on that alone
+ * previously produced clean-looking links on the index page that 404'd on
+ * servers where .htaccess is ignored (e.g. AllowOverride None).
+ *
+ * Instead, only trust clean URLs when we have real evidence: either the
+ * current request itself arrived via a rewritten "show/"/"feed/" path, or a
+ * previous request already proved rewriting works (recorded in a cache
+ * flag). Everything else safely falls back to query-string URLs, which work
+ * unconditionally on any server.
  */
 function use_clean_urls(): bool {
     $uri = (string)($_SERVER['REQUEST_URI'] ?? '');
-    // If index.php is in the URI, the user is likely on a server without
-    // mod_rewrite (e.g. PhpStorm built-in server or php -S).
-    return !str_contains($uri, 'index.php');
+    $path = (string)(parse_url($uri, PHP_URL_PATH) ?? '');
+
+    if (!str_contains($path, 'index.php')) {
+        $base = app_base_path();
+        $relative = str_starts_with($path, $base) ? substr($path, strlen($base)) : ltrim($path, '/');
+        if (str_starts_with($relative, 'show/') || str_starts_with($relative, 'feed/')) {
+            // Direct proof: this request only could have reached us through
+            // an active rewrite rule.
+            $flag = rewrite_confirmed_flag_path();
+            if (!is_file($flag)) {
+                @touch($flag);
+            }
+            return true;
+        }
+    }
+
+    // No direct proof from the current request (e.g. we're rendering the
+    // index page). Fall back to previously-confirmed evidence, if any.
+    return is_file(rewrite_confirmed_flag_path());
 }
 
 /**
  * Generate a URL to the show details page.
  */
 function show_url(string $feedId, array $backParams = []): string {
-    $base = base_url();
+    $base = app_base_path();
 
     if (use_clean_urls()) {
         $encodedId = implode('/', array_map('rawurlencode', explode('/', $feedId)));

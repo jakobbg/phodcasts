@@ -1,42 +1,6 @@
 <?php
 declare(strict_types=1);
 
-// ── Episode duration cache ────────────────────────────────────────────────────
-// Cache lives at cache/episodes/{sha1(feedId)}.json.
-// Structure: { "/abs/path/to/file.mp3": { "mtime": 123, "duration": 3600.0 } }
-// A null duration means parsing was attempted but failed.
-
-function episode_cache_path(string $feedId): string {
-    return __DIR__ . '/../../cache/episodes/' . sha1($feedId) . '.json';
-}
-
-function load_episode_cache(string $feedId): array {
-    $path = episode_cache_path($feedId);
-    if (!is_file($path)) return [];
-    $raw = @file_get_contents($path);
-    if ($raw === false) return [];
-    $data = json_decode($raw, true);
-    return is_array($data) ? $data : [];
-}
-
-function save_episode_cache(string $feedId, array $cache): void {
-    $path = episode_cache_path($feedId);
-    $dir  = dirname($path);
-    if (!is_dir($dir)) {
-        $root = dirname($dir);
-        if (is_dir($root) && !is_writable($root)) {
-            @chmod($root, 0777);
-        }
-        if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
-            error_log(APP_NAME . ": cannot create episode cache dir {$dir} — check permissions on cache/");
-            return;
-        }
-    }
-    if (file_put_contents($path, json_encode($cache), LOCK_EX) === false) {
-        error_log(APP_NAME . ": cannot write episode cache {$path} — check permissions on cache/episodes/");
-    }
-}
-
 // ── Show page ─────────────────────────────────────────────────────────────────
 
 function render_show_page(string $feed): void {
@@ -98,40 +62,22 @@ function render_show_page(string $feed): void {
         }
     }
 
-    // Enumerate media files (already ordered correctly for the feed type).
-    $mediaFiles = find_media_files($feedDir, $feedType);
-
-    // Enrich each file with duration from cache or fresh parse.
-    $cache   = load_episode_cache($feed);
-    $changed = false;
-    foreach ($mediaFiles as &$f) {
-        $key = $f['path'];
-        if (array_key_exists($key, $cache) && $cache[$key]['mtime'] === $f['mtime']) {
-            $f['duration'] = $cache[$key]['duration']; // may be null (cached miss)
-        } else {
-            $f['duration'] = audio_duration($f['path']);
-            $cache[$key]   = ['mtime' => $f['mtime'], 'duration' => $f['duration']];
-            $changed       = true;
-        }
-    }
-    unset($f);
-    if ($changed) save_episode_cache($feed, $cache);
-
-    // Aggregate stats.
-    $totalSize     = (int)array_sum(array_column($mediaFiles, 'size'));
-    $durations     = array_filter(array_column($mediaFiles, 'duration'), fn($d) => $d !== null);
-    $totalDuration = !empty($durations) ? (float)array_sum($durations) : null;
-    $episodeCount  = count($mediaFiles);
+    // Enumerate media files and stats from cache.
+    $feedMeta      = get_feed_metadata($feed, $feedDir);
+    $mediaFiles    = $feedMeta['episodes'] ?? [];
+    $stats         = $feedMeta['stats'] ?? [];
+    $episodeCount  = $stats['count'] ?? 0;
+    $totalSize     = $stats['total_size'] ?? 0;
+    $totalDuration = $stats['total_duration'] ?? null;
+    $newestTs      = $stats['newest_ts'] ?? null;
 
     // Cover images (largest image first).
-    $coverImgPaths = discover_images($feedDir);
+    $coverImgPaths = $feedMeta['covers'] ?? [];
     $coverUrls     = array_map(static fn(string $p): string => media_url($feed, basename($p)), $coverImgPaths);
     $coverUrl      = $coverUrls[0] ?? null;
 
-    // Newest episode date.
-    $newestTs    = null;
-    $sortTs      = array_column($mediaFiles, 'sort_ts');
-    if (!empty($sortTs)) $newestTs = (int)max($sortTs);
+    // Background refresh URL for stats, covers, and book metadata.
+    $refreshUrl = app_base_path() . '?' . http_build_query(['action' => 'meta', 'feed' => $feed, 'refresh' => 1]);
 
     header('Content-Type: text/html; charset=UTF-8');
     // Allow conditional 304s; pages are dynamic so revalidation is required.

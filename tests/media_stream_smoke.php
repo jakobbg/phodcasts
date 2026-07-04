@@ -96,6 +96,85 @@ try {
     @rmdir($tmpDir);
 }
 
+// --- Local cover cache (cache/covers/) ---
+// Cover images must be copied into cache/covers/ on first read from feed
+// storage, then served straight from there on every later request, without
+// touching the (possibly slow) feed directory again.
+$coverFeedId = 'test-feed-cover-' . bin2hex(random_bytes(4));
+$coverTmpDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'fablr_smoke_cover_' . bin2hex(random_bytes(4));
+if (!mkdir($coverTmpDir, 0700, true) && !is_dir($coverTmpDir)) {
+    fwrite(STDERR, "Could not create cover temp directory\n");
+    exit(1);
+}
+$coverName = 'cover.jpg';
+$coverPath = $coverTmpDir . DIRECTORY_SEPARATOR . $coverName;
+$coverContentV1 = str_repeat('JPEGDATA-v1-', 10);
+file_put_contents($coverPath, $coverContentV1);
+$cachedCoverPath = cover_cache_path($coverFeedId, $coverName);
+
+try {
+    $assertSame('cover not cached yet', serve_cached_cover($coverFeedId, $coverName), false);
+    $assertSame('no cache file before first read', is_file($cachedCoverPath), false);
+
+    // First read from "storage" populates the local cache as a side effect.
+    ob_start();
+    stream_file($coverFeedId, $coverTmpDir, $coverName);
+    ob_end_clean();
+
+    $assertSame('cover cache file created after first read', is_file($cachedCoverPath), true);
+    $assertSame('cached cover content matches source', (string)@file_get_contents($cachedCoverPath), $coverContentV1);
+
+    $_SERVER['REQUEST_METHOD'] = 'GET';
+    unset($_SERVER['HTTP_RANGE'], $_SERVER['HTTP_IF_NONE_MATCH']);
+    http_response_code(200);
+    ob_start();
+    $hit = serve_cached_cover($coverFeedId, $coverName);
+    $hitBody = (string)ob_get_clean();
+    $assertSame('cover served from cache', $hit, true);
+    $assertSame('cover cache hit code', http_response_code(), 200);
+    $assertSame('cover cache hit body matches source', $hitBody, $coverContentV1);
+
+    // A conditional request with a matching ETag against the cached copy
+    // must return 304, same as the direct-storage path.
+    $cachedSize  = (int)filesize($cachedCoverPath);
+    $cachedMtime = (int)filemtime($cachedCoverPath);
+    $coverEtag = '"' . sha1($cachedCoverPath . '|' . $cachedMtime . '|' . $cachedSize) . '"';
+    $_SERVER['HTTP_IF_NONE_MATCH'] = $coverEtag;
+    http_response_code(200);
+    ob_start();
+    $notModifiedHit = serve_cached_cover($coverFeedId, $coverName);
+    ob_end_clean();
+    unset($_SERVER['HTTP_IF_NONE_MATCH']);
+    $assertSame('cover cache 304 on matching etag', $notModifiedHit, true);
+    $assertSame('cover cache 304 code', http_response_code(), 304);
+
+    // If the source image changes (different size), the next storage read
+    // must refresh the local cache rather than keep serving a stale copy.
+    $coverContentV2 = str_repeat('JPEGDATA-v2-longer-', 10);
+    file_put_contents($coverPath, $coverContentV2);
+    ob_start();
+    stream_file($coverFeedId, $coverTmpDir, $coverName);
+    ob_end_clean();
+    $assertSame('cover cache refreshed after source change', (string)@file_get_contents($cachedCoverPath), $coverContentV2);
+
+    // Non-image files must never be written into the cover cache.
+    $binFeedId = 'test-feed-bin-' . bin2hex(random_bytes(4));
+    $binName = 'sample.bin';
+    $binPath = $coverTmpDir . DIRECTORY_SEPARATOR . $binName;
+    file_put_contents($binPath, 'not-an-image');
+    ob_start();
+    stream_file($binFeedId, $coverTmpDir, $binName);
+    ob_end_clean();
+    $assertSame('non-cover extension is never cached', is_file(cover_cache_path($binFeedId, $binName)), false);
+    @unlink($binPath);
+} finally {
+    @unlink($cachedCoverPath);
+    if (is_file($coverPath)) {
+        @unlink($coverPath);
+    }
+    @rmdir($coverTmpDir);
+}
+
 if (!empty($failures)) {
     fwrite(STDERR, "Media smoke tests failed: " . count($failures) . "\n");
     foreach ($failures as $f) {

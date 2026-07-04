@@ -2,6 +2,7 @@
 cache/metadata/
 cache/episodes/
 cache/notes/
+cache/covers/
 
 # Per-feed notes written locally on the NAS — never tracked.
 **/notes.md

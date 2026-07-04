@@ -83,7 +83,17 @@ function fetch_book_metadata(string $feedId, string $feedName): ?array {
     // Return cached result (including cached negative results) immediately.
     $cached = load_metadata_cache($feedId);
     if ($cached !== null) {
-        return (!empty($cached['found'])) ? $cached : null;
+        // We have a cache entry.
+        // If it was found (Open Library metadata is there), return it.
+        if (!empty($cached['found'])) {
+            return $cached;
+        }
+        // If it was NOT found (negative cache), but we have stats now,
+        // it means we already tried Open Library and it failed.
+        if (isset($cached['fetched_at']) && empty($cached['found'])) {
+            return null;
+        }
+        // If it only has stats but hasn't tried Open Library yet, proceed.
     }
 
     ['author' => $author, 'title' => $title] = parse_author_and_title($feedName);
@@ -132,4 +142,74 @@ function fetch_book_metadata(string $feedId, string $feedName): ?array {
 
     save_metadata_cache($feedId, $meta);
     return $meta;
+}
+
+/**
+ * Get or refresh general feed statistics and covers.
+ * Returns an array containing 'stats', 'covers' and 'episodes'.
+ */
+function get_feed_metadata(string $feedId, string $feedDir, bool $forceRefresh = false): array {
+    $cached = load_metadata_cache($feedId);
+
+    // If we have cached stats and aren't forcing a refresh, return them.
+    if (!$forceRefresh && $cached !== null && isset($cached['stats'])) {
+        return $cached;
+    }
+
+    $feedType = str_starts_with($feedId, BOOKS_SUBDIR . '/') ? 'book' : 'podcast';
+    $mediaFiles = find_media_files($feedDir, $feedType);
+
+    // Enrich with durations (using the episode cache).
+    $epCache = load_episode_cache($feedId);
+    $epCacheChanged = false;
+    foreach ($mediaFiles as &$f) {
+        $key = $f['path'];
+        if (isset($epCache[$key]) && $epCache[$key]['mtime'] === $f['mtime']) {
+            $f['duration'] = $epCache[$key]['duration'];
+        } else {
+            $f['duration'] = audio_duration($f['path']);
+            $epCache[$key] = ['mtime' => $f['mtime'], 'duration' => $f['duration']];
+            $epCacheChanged = true;
+        }
+    }
+    unset($f);
+    if ($epCacheChanged) {
+        save_episode_cache($feedId, $epCache);
+    }
+
+    $totalSize     = (int)array_sum(array_column($mediaFiles, 'size'));
+    $durations     = array_filter(array_column($mediaFiles, 'duration'), fn($d) => $d !== null);
+    $totalDuration = !empty($durations) ? (float)array_sum($durations) : null;
+    $newestTs      = null;
+    $sortTs        = array_column($mediaFiles, 'sort_ts');
+    if (!empty($sortTs)) {
+        $newestTs = (int)max($sortTs);
+    }
+
+    $stats = [
+        'count'          => count($mediaFiles),
+        'newest_ts'      => $newestTs,
+        'has_content'    => count($mediaFiles) > 0,
+        'total_size'     => $totalSize,
+        'total_duration' => $totalDuration,
+    ];
+
+    $covers = discover_images($feedDir);
+
+    // Proactively copy cover images into the local webserver cache
+    // (cache/covers/) so that the index/show pages and RSS feed never have
+    // to touch (possibly slow) feed storage to render a cover — only this
+    // background/cold-cache scan does, and only once per change.
+    foreach ($covers as $coverPath) {
+        cache_cover_image($feedId, $coverPath);
+    }
+
+    $data = $cached ?? ['found' => false];
+    $data['stats']            = $stats;
+    $data['covers']           = $covers;
+    $data['episodes']         = $mediaFiles;
+    $data['stats_fetched_at'] = time();
+
+    save_metadata_cache($feedId, $data);
+    return $data;
 }

@@ -10,14 +10,20 @@ function render_index_page(string $filter): void {
     $feeds = list_podcasts($filter);
 
     // Strip feeds that have no downloaded content.
+    // Use cached 'has_content' if available to avoid slow disk scans.
     $feeds = array_values(array_filter($feeds, static function (array $f): bool {
+        $cached = load_metadata_cache($f['id']);
+        if ($cached !== null && isset($cached['stats']['has_content'])) {
+            return $cached['stats']['has_content'];
+        }
         return feed_has_content($f['dir']);
     }));
 
     // Optional initial query from URL. Actual filtering is done in-page by JS.
     $query = trim((string)($_GET['q'] ?? ''));
 
-    $base = base_url();
+    $base      = base_url();
+    $appPath   = app_base_path();
     $assetBase = $base;
     $ogImageUrl     = $base . 'og.png';
     $iconUrl        = $base . 'apple-touch-icon.png';

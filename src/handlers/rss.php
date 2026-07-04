@@ -6,7 +6,10 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     $self = $base . '?' . http_build_query(['feed' => $feed]);
     $name = basename($feed);
 
-    $items = find_media_files($feedDir, $type);
+    // Use cached metadata to avoid slow filesystem scans on every RSS request.
+    $feedMeta = get_feed_metadata($feed, $feedDir);
+    $items    = $feedMeta['episodes'] ?? [];
+    $imgPath  = $feedMeta['covers'][0] ?? null;
 
     // Use the newest sort_ts across all items, not just the first (alphabetical) one.
     $lastBuild = time();
@@ -14,7 +17,6 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
         $lastBuild = max(array_column($items, 'sort_ts'));
     }
 
-    $imgPath = discover_image($feedDir);
     $imgUrl = null;
     if ($imgPath !== null) {
         $rel = substr($imgPath, strlen(rtrim($feedDir, DIRECTORY_SEPARATOR)) + 1);

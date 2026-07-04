@@ -485,17 +485,18 @@
 
           $showUrl = show_url($f['id'], $backParams);
 
-          $stats = podcast_stats($f['dir']);
-          $episodeCount = (int)$stats['count'];
+          $meta = load_metadata_cache($f['id']);
+          $stats = ($meta !== null && isset($meta['stats'])) ? $meta['stats'] : null;
 
-          $newestTs = !empty($stats['newest_ts']) ? (int)$stats['newest_ts'] : null;
-          $newestIso = $newestTs !== null ? gmdate('Y-m-d', $newestTs) : null;
+          $episodeCount = $stats !== null ? (int)$stats['count'] : 0;
+          $newestTs    = $stats !== null && !empty($stats['newest_ts']) ? (int)$stats['newest_ts'] : null;
+          $newestIso   = $newestTs !== null ? gmdate('Y-m-d', $newestTs) : null;
           $newestHuman = $newestTs !== null ? human_age($newestTs) : null;
 
-          $coverImgPath = discover_image($f['dir']);
-          $coverUrl = $coverImgPath !== null
-              ? media_url($f['id'], basename($coverImgPath))
-              : null;
+          $coverUrl = null;
+          if ($meta !== null && isset($meta['covers'][0])) {
+              $coverUrl = media_url($f['id'], basename($meta['covers'][0]));
+          }
           $badgeLabel = $f['type'] === 'book' ? 'Audio Book' : 'Podcast';
           $badgeEmoji = $f['type'] === 'book' ? '📚' : '🎙';
           $badgeClass = $f['type'] === 'book' ? 'book' : 'podcast';
@@ -633,6 +634,63 @@ function copyFeed(btn, url) {
     setTimeout(function () { card.style.outline = ''; card.style.outlineOffset = ''; }, 2000);
   });
 }());
+
+(function () {
+  // Background refresh for all visible cards.
+  // We use a small delay between requests to avoid slamming the server.
+  var cards = Array.from(document.querySelectorAll('section.card[data-feed-id]'));
+  var idx = 0;
+  function nextRefresh() {
+    if (idx >= cards.length) return;
+    var card = cards[idx++];
+    var feedId = card.dataset.feedId;
+    var url = '<?= $appPath ?>?action=meta&feed=' + encodeURIComponent(feedId) + '&refresh=1';
+
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.stats) return;
+
+        // Update episode count and newest date
+        var metaDiv = card.querySelector('.meta');
+        if (metaDiv) {
+           var count = d.stats.count || 0;
+           var newestStr = d.stats.newest_human;
+           var html = count + ' ' + (count === 1 ? 'episode' : 'episodes');
+           if (newestStr) {
+             html += ' \u00b7 Newest: <time datetime="' + (d.stats.newest_iso || '') + '">' + newestStr + '</time>';
+           }
+           metaDiv.innerHTML = html;
+        }
+
+        // Update cover if changed or if it was missing
+        if (d.covers && d.covers.length > 0) {
+           var coverWrap = card.querySelector('.cover-wrap a');
+           var img = card.querySelector('img.cover');
+           if (img) {
+              if (!img.src.includes(d.covers[0])) img.src = d.covers[0];
+           } else if (coverWrap) {
+              // Replace placeholder SVG with a new img element
+              var newImg = document.createElement('img');
+              newImg.className = 'cover';
+              newImg.src = d.covers[0];
+              newImg.alt = 'Cover art';
+              newImg.loading = 'lazy';
+              var placeholder = coverWrap.querySelector('svg');
+              if (placeholder) {
+                  placeholder.replaceWith(newImg);
+              } else if (!coverWrap.querySelector('img.cover')) {
+                  coverWrap.appendChild(newImg);
+              }
+           }
+        }
+      })
+      .finally(function() {
+        setTimeout(nextRefresh, 150); // Small stagger between cards
+      });
+  }
+  if (cards.length > 0) setTimeout(nextRefresh, 600);
+})();
 </script>
 </body>
 </html>

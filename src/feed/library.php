@@ -300,3 +300,39 @@ function feed_has_content(string $feedDir): bool {
     }
     return false;
 }
+
+// ── Episode duration cache ────────────────────────────────────────────────────
+// Cache lives at cache/episodes/{sha1(feedId)}.json.
+// Structure: { "/abs/path/to/file.mp3": { "mtime": 123, "duration": 3600.0 } }
+// A null duration means parsing was attempted but failed.
+
+function episode_cache_path(string $feedId): string {
+    return __DIR__ . '/../../cache/episodes/' . sha1($feedId) . '.json';
+}
+
+function load_episode_cache(string $feedId): array {
+    $path = episode_cache_path($feedId);
+    if (!is_file($path)) return [];
+    $raw = @file_get_contents($path);
+    if ($raw === false) return [];
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : [];
+}
+
+function save_episode_cache(string $feedId, array $cache): void {
+    $path = episode_cache_path($feedId);
+    $dir  = dirname($path);
+    if (!is_dir($dir)) {
+        $root = dirname($dir);
+        if (is_dir($root) && !is_writable($root)) {
+            @chmod($root, 0777);
+        }
+        if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
+            error_log(APP_NAME . ": cannot create episode cache dir {$dir} — check permissions on cache/");
+            return;
+        }
+    }
+    if (file_put_contents($path, json_encode($cache), LOCK_EX) === false) {
+        error_log(APP_NAME . ": cannot write episode cache {$path} — check permissions on cache/episodes/");
+    }
+}

@@ -707,13 +707,20 @@ function saveNotes() {
 <?php endif; ?>
 </script>
 
-<?php if (isset($metaFetchUrl) && $metaFetchUrl !== null): ?>
+<?php if (isset($refreshUrl)): ?>
 <script>
 (function () {
-  var url = '<?= h($metaFetchUrl) ?>';
+  var url = '<?= h($refreshUrl) ?>';
+  var initialCount = <?= (int)$episodeCount ?>;
   fetch(url)
     .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
     .then(function (d) {
+      if (d.stats && d.stats.count !== initialCount) {
+        // If episode count changed, reload the page to get the new list.
+        window.location.reload();
+        return;
+      }
+
       if (d.found) {
         // Update title
         if (d.title) {
@@ -739,7 +746,7 @@ function saveNotes() {
           }
         } else {
           var sub2 = document.getElementById('show-author');
-          if (sub2) sub2.remove();
+          if (sub2 && sub2.textContent.includes('Loading')) sub2.remove();
         }
         // Update description
         var loader = document.getElementById('desc-loading');
