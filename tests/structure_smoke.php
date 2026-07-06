@@ -5,7 +5,7 @@ $requiredPaths = [
     'index.php',
     '.htaccess',
     'config/bootstrap.php',
-    'config/constants.php',
+    'config/constants.php.sample',
     'config/config.json',
     'src/utils/web.php',
     'src/utils/media.php',

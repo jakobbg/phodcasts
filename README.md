@@ -33,7 +33,13 @@ Intended for self-hosters who have downloaded podcasts or ripped audiobooks to a
 ## Setup
 
 1. Copy the full project (`index.php`, `.htaccess`, `config/`, `src/`, `views/`, `cache/`, and image assets) to your web root (or virtual host directory).
-2. Edit user settings in `config/config.json`:
+2. Copy the constants template and keep your local `constants.php` untracked:
+
+```bash
+cp config/constants.php.sample config/constants.php
+```
+
+3. Edit user settings in `config/config.json`:
 
 ```php
 {
@@ -53,7 +59,7 @@ Intended for self-hosters who have downloaded podcasts or ripped audiobooks to a
 
 `MAIN_PAGE_PASSWORD` protects show/detail pages (`show/...`) with a full-page fablr login screen. The main index remains visible so users can browse available feeds, while show-page UI actions (Subscribe, play/download, edit description) require authentication. RSS feed URLs (`feed/...` / `?feed=...`) remain accessible and shareable.
 
-3. Organise your audio files into subfolders:
+4. Organise your audio files into subfolders:
 
 ```
 PODCAST_ROOT/
@@ -111,7 +117,7 @@ Use the **Edit description** control on the show page to update text directly. Y
 
 **Stats caching**
 
-Episode count, total size/duration, cover art, and the newest/added date shown on the index and show pages are cached in `cache/metadata/`. Opening either page triggers a background refresh of that cache so it stays current without slowing down the initial render — but a real rescan of the feed folder (which can be slow on a NAS/network share) only happens at most once every 30 minutes per feed (`CACHE_MIN_REFRESH_INTERVAL` in `config/constants.php`); more frequent page loads simply reuse the existing cache.
+Episode count, total size/duration, cover art, and the newest/added date shown on the index and show pages are cached in `cache/metadata/`. Opening either page triggers a background refresh of that cache so it stays current without slowing down the initial render — but a real rescan of the feed folder (which can be slow on a NAS/network share) only happens at most once every 30 minutes per feed (`CACHE_MIN_REFRESH_INTERVAL` in your local `config/constants.php`, initially copied from `config/constants.php.sample`); more frequent page loads simply reuse the existing cache.
 
 ## Smoke tests
 
@@ -131,7 +137,7 @@ They validate high-risk logic such as episode title normalization, feed path saf
 
 ## Audiobook metadata
 
-When `FETCH_BOOK_METADATA` is set to `true` in `config/constants.php`, audiobook RSS feeds are enriched with a book description fetched from the [Open Library](https://openlibrary.org) API. The description appears as the feed summary in your podcast app.
+When `FETCH_BOOK_METADATA` is set to `true` in `config/config.json`, audiobook RSS feeds are enriched with a book description fetched from the [Open Library](https://openlibrary.org) API. The description appears as the feed summary in your podcast app.
 
 **How it works**
 

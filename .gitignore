@@ -4,6 +4,9 @@ cache/episodes/
 cache/notes/
 cache/covers/
 
+# Local constants override copied from config/constants.php.sample.
+config/constants.php
+
 # Per-feed notes written locally on the NAS — never tracked.
 **/notes.md
 
