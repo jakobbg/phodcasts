@@ -3,6 +3,8 @@ cache/metadata/
 cache/episodes/
 cache/notes/
 cache/covers/
+# Runtime flag proving URL rewrite support was observed.
+cache/.rewrite_confirmed
 
 # Local machine-specific settings copied from config/config.json.sample.
 config/config.json
