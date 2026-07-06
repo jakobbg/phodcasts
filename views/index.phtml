@@ -296,14 +296,20 @@
   }
 
   .type-badge {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .4px;
-    text-transform: uppercase;
-    padding: 2px 8px;
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
     border-radius: 999px;
-    margin-bottom: 8px;
+    font-size: 16px;
+    line-height: 1;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: 0 6px 16px rgba(2,6,23,.35);
   }
 
   .type-badge.podcast {
@@ -485,7 +491,7 @@
               $coverUrl = media_url($f['id'], basename($meta['covers'][0]));
           }
           $badgeLabel = $f['type'] === 'book' ? 'Audio Book' : 'Podcast';
-          $badgeEmoji = $f['type'] === 'book' ? '📚' : '🎙';
+          $badgeEmoji = $f['type'] === 'book' ? '📚' : '🎙️';
           $badgeClass = $f['type'] === 'book' ? 'book' : 'podcast';
         ?>
           <section class="card" aria-label="<?php echo h($f['name']); ?>" data-feed-id="<?php echo h($f['id']); ?>" data-feed-type="<?php echo h($f['type']); ?>">
@@ -497,8 +503,8 @@
                   <?php echo cover_placeholder_svg($f['name'], $f['name']); ?>
                 <?php endif; ?>
               </a>
+              <span class="type-badge <?php echo $badgeClass; ?>" role="img" aria-label="<?php echo h($badgeLabel); ?>"><?php echo $badgeEmoji; ?></span>
             </div>
-            <span class="type-badge <?php echo $badgeClass; ?>"><span aria-hidden="true"><?php echo $badgeEmoji; ?></span> <?php echo h($badgeLabel); ?></span>
             <h2 class="pod-title"><?php echo h($f['name']); ?></h2>
             <div class="meta">
               <?php echo (int)$episodeCount; ?> <?php echo $episodeCount === 1 ? 'episode' : 'episodes'; ?><?php if ($dateHuman !== null): ?> &middot; <?php echo h($dateLabel); ?>: <time datetime="<?php echo h((string)$dateIso); ?>"><?php echo h($dateHuman); ?></time><?php endif; ?>
