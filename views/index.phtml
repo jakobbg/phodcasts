@@ -193,20 +193,8 @@
     background: rgba(255,255,255,.06);
   }
 
-  /* Cover wrapper — positions the RSS copy icon over the artwork */
+  /* Cover wrapper */
   .cover-wrap { position: relative; margin-bottom: 12px; }
-  .cover-copy-btn {
-    position: absolute; bottom: 8px; right: 8px;
-    width: 30px; height: 30px; border-radius: 50%;
-    border: 1px solid rgba(255,255,255,.25);
-    background: rgba(0,0,0,.45); backdrop-filter: blur(6px);
-    color: rgba(255,255,255,.85); cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: background .12s, color .12s, border-color .12s;
-  }
-  .cover-copy-btn:hover { background: rgba(0,0,0,.65); color: #fff; }
-  .cover-copy-btn.copied { color: #4ade80; border-color: #4ade80; }
-  .cover-copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .pod-title {
     font-family: var(--font-sans);
@@ -471,8 +459,6 @@
     <?php else: ?>
       <div class="grid">
         <?php foreach ($feeds as $f):
-          $rss = $base . '?' . http_build_query(['feed' => $f['id']]);
-
           // Encode the current page state so the show page can return here.
           $backParams = [];
           if ($filter !== 'all') $backParams['filter'] = $filter;
@@ -511,7 +497,6 @@
                   <?php echo cover_placeholder_svg($f['name'], $f['name']); ?>
                 <?php endif; ?>
               </a>
-              <button class="cover-copy-btn" onclick="copyRssFeed(this,'<?php echo h(addslashes($rss)); ?>')" title="Copy RSS feed URL" aria-label="Copy RSS feed URL for <?php echo h($f['name']); ?>"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
             </div>
             <span class="type-badge <?php echo $badgeClass; ?>"><span aria-hidden="true"><?php echo $badgeEmoji; ?></span> <?php echo h($badgeLabel); ?></span>
             <h2 class="pod-title"><?php echo h($f['name']); ?></h2>
@@ -531,32 +516,12 @@
 
     <div class="divider"></div>
     <footer class="site-footer">
-      <p>Use the <strong>clipboard icon</strong> on each cover to copy the RSS URL into any podcast app. Feed URLs remain public and shareable.</p>
+      <p>Open a feed&apos;s details page to copy the RSS URL and subscribe in your podcast app. Feed URLs remain public and shareable.</p>
       <p class="brand-note"><?= h(APP_NAME) ?> · <?= h(APP_QUIP) ?> · <?= h(APP_VERSION) ?><?php if ($shortHash !== ''): ?> · <?= h($shortHash) ?><?php endif; ?></p>
     </footer>
   </div>
 
 <script>
-function copyRssFeed(btn, url) {
-  var SVG_COPY  = btn.innerHTML;
-  var SVG_CHECK = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
-  if (!navigator.clipboard) { prompt('Copy this feed URL:', url); return; }
-  navigator.clipboard.writeText(url).then(function () {
-    btn.innerHTML = SVG_CHECK;
-    btn.classList.add('copied');
-    setTimeout(function () { btn.innerHTML = SVG_COPY; btn.classList.remove('copied'); }, 2000);
-  });
-}
-function copyFeed(btn, url) {
-  if (!navigator.clipboard) { prompt('Copy this feed URL:', url); return; }
-  navigator.clipboard.writeText(url).then(function () {
-    var orig = btn.textContent, origLabel = btn.getAttribute('aria-label');
-    btn.style.width = btn.offsetWidth + 'px';
-    btn.textContent = 'Copied!';
-    btn.setAttribute('aria-label', 'Copied to clipboard');
-    setTimeout(function () { btn.style.width = ''; btn.textContent = orig; btn.setAttribute('aria-label', origLabel); }, 2000);
-  });
-}
 (function () {
   // Copy GitHub commit URL when the app title is clicked.
   var titleEl = document.getElementById('app-title');
