@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-// Podcasts: /mnt/torrents/Podcasts/Podcasts/  Audio Books: /mnt/torrents/Podcasts/Books/
-
 require_once __DIR__ . '/config/bootstrap.php';
 
 $action = (string)($_GET['action'] ?? '');

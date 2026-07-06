@@ -1,7 +1,7 @@
 {
   "_note": "User-editable settings. Restart the web server after changes.",
 
-  "PODCAST_ROOT":    "/Volumes/torrents/Podcasts",
+  "PODCAST_ROOT":    "/path/to/audio",
   "PODCASTS_SUBDIR": "Podcasts",
   "BOOKS_SUBDIR":    "Books",
   "FEED_LANGUAGE":   "no",

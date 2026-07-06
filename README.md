@@ -43,7 +43,7 @@ cp config/config.json.sample config/config.json
 
 ```php
 {
-   "PODCAST_ROOT": "/mnt/torrents/Podcasts",
+   "PODCAST_ROOT": "/path/to/audio",
    "PODCASTS_SUBDIR": "Podcasts",
    "BOOKS_SUBDIR": "Books",
    "FEED_LANGUAGE": "no",
