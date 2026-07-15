@@ -124,10 +124,47 @@ $assertSame('unknown ext fallback',  guess_mime('file.xyz'),   'application/octe
 
 // ── audio_duration dispatcher ────────────────────────────────────────────────
 
-$assertSame('ogg returns null (unsupported)', audio_duration('/nonexistent/file.ogg'), null);
+$assertSame('nonexistent ogg returns null', audio_duration('/nonexistent/file.ogg'), null);
 $assertSame('wav returns null (unsupported)', audio_duration('/nonexistent/file.wav'), null);
 $assertSame('mp3 of nonexistent returns null', audio_duration('/nonexistent/file.mp3'), null);
 $assertSame('m4a of nonexistent returns null', audio_duration('/nonexistent/file.m4a'), null);
+
+// Minimal synthetic Ogg/Opus file: one OpusHead page + one EOS page with
+// granule position = preSkip + 48000 (i.e. exactly 1 second of audio).
+$tmpOpus = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'fablr-opus-smoke-' . bin2hex(random_bytes(4)) . '.opus';
+
+$page1Header = 'OggS'
+    . chr(0)                // version
+    . chr(2)                // BOS
+    . pack('V2', 0, 0)      // granule position
+    . pack('V', 1)          // bitstream serial
+    . pack('V', 0)          // sequence number
+    . pack('V', 0)          // checksum (ignored by parser)
+    . chr(1)                // page segment count
+    . chr(19);              // lacing value
+$opusHead = 'OpusHead'
+    . chr(1)                // version
+    . chr(2)                // channels
+    . pack('v', 312)        // pre-skip
+    . pack('V', 48000)      // sample rate
+    . pack('v', 0)          // output gain
+    . chr(0);               // channel mapping family
+
+$page2Header = 'OggS'
+    . chr(0)                // version
+    . chr(4)                // EOS
+    . pack('V2', 48312, 0)  // granule position = 312 + 48000
+    . pack('V', 1)          // bitstream serial
+    . pack('V', 1)          // sequence number
+    . pack('V', 0)          // checksum (ignored by parser)
+    . chr(1)                // page segment count
+    . chr(1);               // lacing value
+$page2Body = "\0";
+
+file_put_contents($tmpOpus, $page1Header . $opusHead . $page2Header . $page2Body);
+$opusDuration = audio_duration($tmpOpus);
+$assertTrue('opus duration parses as ~1 second', $opusDuration !== null && abs($opusDuration - 1.0) < 0.001);
+@unlink($tmpOpus);
 
 // ── dot-prefixed feed name rejection ─────────────────────────────────────────
 

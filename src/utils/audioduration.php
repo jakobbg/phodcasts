@@ -11,6 +11,7 @@ function audio_duration(string $path): ?float {
         'm4a', 'm4b', 'mp4' => mp4_duration($path),
         'mp3'               => mp3_duration($path),
         'flac'              => flac_duration($path),
+        'ogg', 'oga', 'opus' => ogg_duration($path),
         default             => null,
     };
 }
@@ -260,6 +261,76 @@ function flac_duration(string $path): ?float {
             if ($isLast) break;
             @fseek($fh, $blockLen, SEEK_CUR);
         }
+        return null;
+    } finally {
+        fclose($fh);
+    }
+}
+
+// ── OGG / OPUS / OGA ────────────────────────────────────────────────────────
+
+function ogg_uint64_le(string $bytes): ?float {
+    if (strlen($bytes) < 8) return null;
+    $parts = unpack('Vlo/Vhi', $bytes);
+    if (!is_array($parts)) return null;
+    $lo = (float)($parts['lo'] ?? 0);
+    $hi = (float)($parts['hi'] ?? 0);
+    return $hi * 4294967296.0 + $lo;
+}
+
+function ogg_duration(string $path): ?float {
+    $fh = @fopen($path, 'rb');
+    if ($fh === false) return null;
+    try {
+        $lastGranule = null;
+        $opusPreSkip = null;
+        $vorbisRate  = null;
+
+        while (!feof($fh)) {
+            $header = @fread($fh, 27);
+            if ($header === false || strlen($header) === 0) break;
+            if (strlen($header) < 27) return null;
+            if (substr($header, 0, 4) !== 'OggS') return null;
+
+            $granule = ogg_uint64_le(substr($header, 6, 8));
+            if ($granule !== null) {
+                $lastGranule = $granule;
+            }
+
+            $segCount = ord($header[26]);
+            $lacing   = @fread($fh, $segCount);
+            if ($lacing === false || strlen($lacing) < $segCount) return null;
+
+            $bodyLen = 0;
+            for ($i = 0; $i < $segCount; $i++) {
+                $bodyLen += ord($lacing[$i]);
+            }
+
+            $body = $bodyLen > 0 ? @fread($fh, $bodyLen) : '';
+            if ($body === false || strlen($body) < $bodyLen) return null;
+
+            // Opus identification header. Pre-skip is LE uint16 at bytes 10-11.
+            if ($opusPreSkip === null && strlen($body) >= 19 && substr($body, 0, 8) === 'OpusHead') {
+                $opusPreSkip = unpack('v', substr($body, 10, 2))[1] ?? 0;
+            }
+
+            // Vorbis identification header. Sample rate is LE uint32 at bytes 12-15.
+            if ($vorbisRate === null && strlen($body) >= 30 && ord($body[0]) === 1 && substr($body, 1, 6) === 'vorbis') {
+                $vorbisRate = unpack('V', substr($body, 12, 4))[1] ?? 0;
+            }
+        }
+
+        if ($lastGranule === null || $lastGranule <= 0) return null;
+
+        if ($opusPreSkip !== null) {
+            $pcm = $lastGranule - (float)$opusPreSkip;
+            return $pcm > 0 ? $pcm / 48000.0 : null;
+        }
+
+        if ($vorbisRate !== null && $vorbisRate > 0) {
+            return $lastGranule / (float)$vorbisRate;
+        }
+
         return null;
     } finally {
         fclose($fh);
