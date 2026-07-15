@@ -21,7 +21,7 @@
   }
   $ogDescription = $typeLabel . ' · ' . implode(' · ', $ogParts) . ' · ' . app_quip_sentence();
 ?>
-  <title><?= h($displayTitle) ?> – <?= h(APP_NAME) ?></title>
+  <title><?= h($displayTitle . ' · ' . APP_NAME . ' · ' . APP_QUIP) ?></title>
   <link rel="icon" type="image/png" href="<?= h($assetBase . 'favicon.png') ?>">
   <link rel="apple-touch-icon" href="<?= h($assetBase . 'apple-touch-icon.png') ?>">
   <link rel="apple-touch-icon-precomposed" href="<?= h($assetBase . 'apple-touch-icon-precomposed.png') ?>">
