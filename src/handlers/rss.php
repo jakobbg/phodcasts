@@ -100,9 +100,15 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     foreach ($items as $it) {
         $title = episode_title($it['rel'], $name);
         $enclosure = media_url($feed, $it['rel']);
-        // Reuse the feed-level description for item summaries so clients that
-        // prioritize item metadata still show the editable show description.
-        $itemSummary = $feedDesc;
+        $itemMtime = (int)($it['mtime'] ?? 0);
+        if ($itemMtime <= 0) {
+            $itemMtime = (int)($it['pub_ts'] ?? 0);
+        }
+        if ($itemMtime > 0) {
+            $itemSummary = 'Added ' . gmdate('Y-m-d', $itemMtime);
+        } else {
+            $itemSummary = 'Added: Unknown';
+        }
         // Stable GUID: based only on feed name + relative path, not mtime/size.
         $guid = sha1($feed . '|' . $it['rel']);
         $pubTs = (int)($it['pub_ts'] ?? $it['mtime']);

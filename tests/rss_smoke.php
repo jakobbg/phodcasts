@@ -43,6 +43,9 @@ if (!mkdir($feedDir, 0777, true) && !is_dir($feedDir)) {
 try {
     file_put_contents($feedDir . DIRECTORY_SEPARATOR . 'notes.md', 'Custom smoke description');
     file_put_contents($feedDir . DIRECTORY_SEPARATOR . 'episode-001.mp3', "ID3\0\0\0\0");
+    $episodePath = $feedDir . DIRECTORY_SEPARATOR . 'episode-001.mp3';
+    $episodeMtime = @filemtime($episodePath) ?: time();
+    $expectedItemSummary = 'Added ' . gmdate('Y-m-d', $episodeMtime);
 
     $_SERVER['HTTP_HOST'] = 'localhost';
     $_SERVER['SCRIPT_NAME'] = '/index.php';
@@ -58,11 +61,8 @@ try {
     $assertContains('channel itunes summary mirrors description', $xml, '<itunes:summary>' . h($expectedDesc) . '</itunes:summary>');
     $assertContains('generator uses app name and version', $xml, '<generator>' . h(APP_NAME) . ' ' . h(APP_VERSION) . '</generator>');
 
-    $itemSummaryCount = substr_count($xml, '<itunes:summary>' . h($expectedDesc) . '</itunes:summary>');
-    $assertTrue('item itunes summary includes feed description', $itemSummaryCount >= 2, $itemSummaryCount, '>= 2');
-
-    $itemDescCount = substr_count($xml, '<description>' . h($expectedDesc) . '</description>');
-    $assertTrue('item description includes feed description', $itemDescCount >= 2, $itemDescCount, '>= 2');
+    $assertContains('item itunes summary uses Added <date>', $xml, '<itunes:summary>' . h($expectedItemSummary) . '</itunes:summary>');
+    $assertContains('item description uses Added <date>', $xml, '<description>' . h($expectedItemSummary) . '</description>');
 } finally {
     $rmTree($tmpRoot);
 }
