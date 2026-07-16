@@ -33,21 +33,7 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     // Build feed description: user notes (highest priority) → Open Library → default.
     $feedDesc = "Podcast feed for {$name}";
 
-    // Check all three notes paths (manual feed dir, current cache hash, legacy hash).
-    $notesFound = null;
-    foreach ([
-        $feedDir . DIRECTORY_SEPARATOR . 'notes.md',
-        __DIR__ . '/../../cache/notes/' . sha1($feedDir) . '.md',
-        __DIR__ . '/../../cache/notes/' . sha1($feed)    . '.md',
-    ] as $nc) {
-        if (is_file($nc) && is_readable($nc)) {
-            $raw = @file_get_contents($nc);
-            if ($raw !== false && trim($raw) !== '') {
-                $notesFound = trim($raw);
-                break;
-            }
-        }
-    }
+    $notesFound = load_feed_notes($feed, $feedDir);
 
     if ($notesFound !== null) {
         // Strip common Markdown syntax to produce clean plain text for RSS.

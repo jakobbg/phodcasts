@@ -38,17 +38,8 @@ function load_metadata_cache(string $feedId): ?array {
 function save_metadata_cache(string $feedId, array $data): void {
     $path = metadata_cache_path($feedId);
     $dir  = dirname($path);
-    if (!is_dir($dir)) {
-        // Ensure cache root is writable; chmod is a best-effort fix for NAS
-        // deployments where the directory is owned by a different user.
-        $root = dirname($dir);
-        if (is_dir($root) && !is_writable($root)) {
-            @chmod($root, 0777);
-        }
-        if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
-            error_log(APP_NAME . ": cannot create metadata cache dir {$dir} — check permissions on cache/");
-            return;
-        }
+    if (!ensure_cache_dir($dir)) {
+        return;
     }
     if (file_put_contents($path, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX) === false) {
         error_log(APP_NAME . ": cannot write metadata cache {$path} — check permissions on cache/metadata/");

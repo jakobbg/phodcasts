@@ -146,22 +146,7 @@ function is_book_archive_build_in_progress(string $lockPath): bool {
 }
 
 function ensure_book_archive_dir(): bool {
-    $dir = book_archive_cache_dir();
-    if (is_dir($dir)) {
-        return true;
-    }
-
-    $root = dirname($dir);
-    if (is_dir($root) && !is_writable($root)) {
-        @chmod($root, 0777);
-    }
-
-    if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
-        error_log(APP_NAME . ': cannot create archive cache dir ' . $dir . ' - check permissions on cache/');
-        return false;
-    }
-
-    return true;
+    return ensure_cache_dir(book_archive_cache_dir());
 }
 
 function save_book_archive_progress(string $progressPath, array $progress): void {
@@ -471,91 +456,9 @@ function stream_archive_file(string $path, string $downloadName): void {
         echo 'Cannot read archive file.';
         return;
     }
-
-    $mtime = @filemtime($path) ?: time();
-
-    header('Content-Type: application/zip');
-    header('Content-Disposition: attachment; filename="' . str_replace('"', '', $downloadName) . '"');
-    header('Accept-Ranges: bytes');
-    send_security_headers('media');
-    header('Last-Modified: ' . gmdate('D, d M Y H:i:s', (int)$mtime) . ' GMT');
-    $etag = '"' . sha1($path . '|' . $mtime . '|' . $size) . '"';
-    header('ETag: ' . $etag);
-
-    $inm = (string)($_SERVER['HTTP_IF_NONE_MATCH'] ?? '');
-    if ($inm !== '' && $inm === $etag) {
-        http_response_code(304);
-        return;
-    }
-
-    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
-    $start = 0;
-    $end = (int)$size - 1;
-    $status = 200;
-
-    $range = (string)($_SERVER['HTTP_RANGE'] ?? '');
-    if ($range !== '' && preg_match('/bytes=(\d*)-(\d*)/i', $range, $m)) {
-        $rStart = $m[1] === '' ? null : (int)$m[1];
-        $rEnd = $m[2] === '' ? null : (int)$m[2];
-
-        if ($rStart === null && $rEnd !== null) {
-            $len = max(0, $rEnd);
-            if ($len > 0) {
-                $start = max(0, (int)$size - $len);
-            }
-        } elseif ($rStart !== null) {
-            $start = $rStart;
-            if ($rEnd !== null) {
-                $end = $rEnd;
-            }
-        }
-
-        if ($start > $end || $start < 0 || $end >= $size) {
-            http_response_code(416);
-            header('Content-Range: bytes */' . $size);
-            return;
-        }
-
-        $status = 206;
-        header('Content-Range: bytes ' . $start . '-' . $end . '/' . $size);
-    }
-
-    $length = $end - $start + 1;
-    header('Content-Length: ' . $length);
-    if ($status === 206) {
-        http_response_code(206);
-    }
-
-    if ($method === 'HEAD') {
-        return;
-    }
-
-    $fp = fopen($path, 'rb');
-    if ($fp === false) {
-        http_response_code(500);
-        header('Content-Type: text/plain; charset=UTF-8');
-        echo 'Cannot open archive.';
-        return;
-    }
-
-    if ($start > 0) {
-        fseek($fp, $start);
-    }
-
-    $chunk = 1024 * 1024;
-    $remaining = $length;
-    while ($remaining > 0 && !feof($fp)) {
-        $read = ($remaining > $chunk) ? $chunk : $remaining;
-        $buf = fread($fp, $read);
-        if ($buf === false) {
-            break;
-        }
-        $remaining -= strlen($buf);
-        echo $buf;
-        flush();
-    }
-
-    fclose($fp);
+    $mtime       = @filemtime($path) ?: time();
+    $disposition = 'attachment; filename="' . str_replace('"', '', $downloadName) . '"';
+    stream_ranged_response($path, (int)$size, (int)$mtime, 'application/zip', $disposition);
 }
 
 function send_book_archive(string $feed): void {

@@ -529,3 +529,48 @@ function send_security_headers(string $context = 'html'): void {
         header('X-Robots-Tag: noindex, nofollow');
     }
 }
+
+/**
+ * Ensure a cache directory exists, creating it if necessary.
+ * Attempts a best-effort chmod on the parent if it is not writable (common on
+ * NAS deployments where the directory is owned by a different user).
+ * Returns true on success, false if the directory could not be created.
+ */
+function ensure_cache_dir(string $dir): bool {
+    if (is_dir($dir)) {
+        return true;
+    }
+    $root = dirname($dir);
+    if (is_dir($root) && !is_writable($root)) {
+        @chmod($root, 0777);
+    }
+    if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
+        error_log(APP_NAME . ": cannot create cache dir {$dir} — check permissions on cache/");
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Return the raw Markdown text of the first readable notes file for a feed,
+ * or null if none is found.  Checks (in priority order):
+ *   1. Manual notes.md in the feed directory
+ *   2. Saved notes in cache/notes/{sha1($feed)}.md  (current)
+ *   3. Saved notes in cache/notes/{sha1($feedDir)}.md  (legacy)
+ */
+function load_feed_notes(string $feed, string $feedDir): ?string {
+    $cacheRoot = __DIR__ . '/../../cache/notes/';
+    foreach ([
+        $feedDir . DIRECTORY_SEPARATOR . 'notes.md',
+        $cacheRoot . sha1($feed)    . '.md',
+        $cacheRoot . sha1($feedDir) . '.md',
+    ] as $path) {
+        if (is_file($path) && is_readable($path)) {
+            $raw = @file_get_contents($path);
+            if ($raw !== false && trim($raw) !== '') {
+                return trim($raw);
+            }
+        }
+    }
+    return null;
+}

@@ -42,24 +42,10 @@ function render_show_page(string $feed): void {
 
     // Optional notes: prefer manual notes.md in the feed directory;
     // fall back to web-saved notes in cache/notes/.
-    $notes     = null;
-    $notesRaw  = null;
-    // Check in priority order: manual notes.md in feed dir → cache/notes by
-    // feed string hash (current) → cache/notes by feedDir hash (legacy).
-    $notesCandidates = [
-        $feedDir . DIRECTORY_SEPARATOR . 'notes.md',
-        __DIR__ . '/../../cache/notes/' . sha1($feed)    . '.md',
-        __DIR__ . '/../../cache/notes/' . sha1($feedDir) . '.md',
-    ];
-    foreach ($notesCandidates as $notesPath) {
-        if (is_file($notesPath) && is_readable($notesPath)) {
-            $raw = @file_get_contents($notesPath);
-            if ($raw !== false && $raw !== '') {
-                $notesRaw = $raw;
-                $notes    = render_markdown($raw);
-                break;
-            }
-        }
+    $notes    = null;
+    $notesRaw = load_feed_notes($feed, $feedDir);
+    if ($notesRaw !== null) {
+        $notes = render_markdown($notesRaw);
     }
 
     // Enumerate media files and stats from cache.

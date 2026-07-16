@@ -40,16 +40,10 @@ function save_notes_handler(string $feed, string $content): void {
     // Write to cache/notes/ — always under the app's writable cache directory.
     // This avoids needing write permission to the NAS media directories.
     $cacheDir  = __DIR__ . '/../../cache/notes/';
-    if (!is_dir($cacheDir)) {
-        $root = dirname($cacheDir);
-        if (is_dir($root) && !is_writable($root)) {
-            @chmod($root, 0777);
-        }
-        if (!mkdir($cacheDir, 0777, true) && !is_dir($cacheDir)) {
-            http_response_code(500);
-            echo json_encode(['ok' => false, 'error' => 'Cannot create notes cache directory — check permissions on cache/']);
-            return;
-        }
+    if (!ensure_cache_dir(rtrim($cacheDir, '/'))) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => 'Cannot create notes cache directory — check permissions on cache/']);
+        return;
     }
     $notesPath = $cacheDir . sha1($feed) . '.md';
     if (file_put_contents($notesPath, $content) === false) {
