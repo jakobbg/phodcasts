@@ -150,9 +150,15 @@ function fetch_book_metadata(string $feedId, string $feedName): ?array {
  */
 function get_feed_metadata(string $feedId, string $feedDir, bool $forceRefresh = false): array {
     $cached = load_metadata_cache($feedId);
+    $statsVersion = 2;
 
     // If we have cached stats and aren't forcing a refresh, return them.
-    if (!$forceRefresh && $cached !== null && isset($cached['stats'])) {
+    if (
+        !$forceRefresh
+        && $cached !== null
+        && isset($cached['stats'])
+        && (int)($cached['stats_version'] ?? 0) >= $statsVersion
+    ) {
         return $cached;
     }
 
@@ -160,7 +166,12 @@ function get_feed_metadata(string $feedId, string $feedDir, bool $forceRefresh =
     // every CACHE_MIN_REFRESH_INTERVAL seconds — index/show pages trigger a
     // background refresh on every page load, and without this guard that
     // would hit (potentially slow) feed storage on every single visit.
-    if ($forceRefresh && $cached !== null && isset($cached['stats'], $cached['stats_fetched_at'])) {
+    if (
+        $forceRefresh
+        && $cached !== null
+        && isset($cached['stats'], $cached['stats_fetched_at'])
+        && (int)($cached['stats_version'] ?? 0) >= $statsVersion
+    ) {
         $age = time() - (int)$cached['stats_fetched_at'];
         if ($age >= 0 && $age < CACHE_MIN_REFRESH_INTERVAL) {
             return $cached;
@@ -192,8 +203,8 @@ function get_feed_metadata(string $feedId, string $feedDir, bool $forceRefresh =
     $durations     = array_filter(array_column($mediaFiles, 'duration'), fn($d) => $d !== null);
     $totalDuration = !empty($durations) ? (float)array_sum($durations) : null;
 
-    // 'newest_ts' is based on sort_ts (pub date, real or synthetic) and is
-    // meaningful for podcasts, where episodes trickle in over time.
+    // 'newest_ts' is based on sort_ts. For podcasts, sort_ts resolves to a
+    // real filename date when present, otherwise filesystem mtime.
     $newestTs = null;
     $sortTs   = array_column($mediaFiles, 'sort_ts');
     if (!empty($sortTs)) {
@@ -233,6 +244,7 @@ function get_feed_metadata(string $feedId, string $feedDir, bool $forceRefresh =
 
     $data = $cached ?? ['found' => false];
     $data['stats']            = $stats;
+    $data['stats_version']    = $statsVersion;
     $data['covers']           = $covers;
     $data['episodes']         = $mediaFiles;
     $data['stats_fetched_at'] = time();

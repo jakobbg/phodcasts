@@ -105,6 +105,46 @@ try {
     @unlink(episode_cache_path($testFeedId));
 }
 
+// ── podcast newest_ts (dateless files should use mtime, not synthetic) ─────
+$tmpPodcastDir = sys_get_temp_dir() . '/fablr_test_podcast_newest_' . bin2hex(random_bytes(6));
+mkdir($tmpPodcastDir, 0777, true);
+$podcastFeedId = PODCASTS_SUBDIR . '/__smoke_test_podcast_newest_' . bin2hex(random_bytes(6));
+
+try {
+    file_put_contents($tmpPodcastDir . '/episode-a.mp3', 'not a real mp3, just needs the right extension');
+    file_put_contents($tmpPodcastDir . '/episode-b.mp3', 'not a real mp3, just needs the right extension');
+
+    $now = time();
+    $feedMeta = get_feed_metadata($podcastFeedId, $tmpPodcastDir);
+    $stats    = $feedMeta['stats'] ?? [];
+    $episodes = $feedMeta['episodes'] ?? [];
+
+    $newestTs = $stats['newest_ts'] ?? null;
+    $assertSame('podcast newest_ts is present', $newestTs !== null, true);
+    $assertSame('podcast newest_ts is close to now (within 5s), not synthetic year-2000',
+        $newestTs !== null && abs($now - (int)$newestTs) <= 5,
+        true
+    );
+
+    $assertSame('podcast episodes found', count($episodes), 2);
+    foreach ($episodes as $ep) {
+        $assertSame('podcast episode pub_ts stays null when filename has no date',
+            array_key_exists('pub_ts', $ep) && $ep['pub_ts'] === null,
+            true
+        );
+        $assertSame('podcast episode sort_ts falls back to real mtime',
+            isset($ep['mtime'], $ep['sort_ts']) && (int)$ep['sort_ts'] === (int)$ep['mtime'],
+            true
+        );
+    }
+} finally {
+    @unlink($tmpPodcastDir . '/episode-a.mp3');
+    @unlink($tmpPodcastDir . '/episode-b.mp3');
+    @rmdir($tmpPodcastDir);
+    @unlink(metadata_cache_path($podcastFeedId));
+    @unlink(episode_cache_path($podcastFeedId));
+}
+
 // ── Cache refresh throttling (only rescan disk once every 30 minutes) ──────
 //
 // index.phtml / show.phtml trigger a background "refresh=1" request on

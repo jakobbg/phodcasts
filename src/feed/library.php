@@ -170,21 +170,21 @@ function find_media_files(string $feedDir, string $type = 'podcast'): array {
         $files = array_slice($files, 0, MAX_ITEMS);
     }
 
-    // For files without a date in the filename, assign synthetic pub dates
-    // based on their natural sort position so episode ordering is preserved.
-    // Use a base date far in the past and step forward one day per episode.
+    // For books without a date in the filename, assign synthetic pub dates
+    // based on their natural sort position so chapter ordering is preserved
+    // in podcast clients that always sort newest-first.
+    //
+    // Podcasts intentionally keep pub_ts = null when no date is present so
+    // they fall back to filesystem mtime for both RSS/pubDate and age badges.
+    // This avoids misleading synthetic "20+ years ago" labels.
     $syntheticBase = mktime(12, 0, 0, 1, 1, 2000);
     $syntheticStep = 86400; // one day per episode
     $fileCount = count($files);
     foreach ($files as $i => &$f) {
-        if ($f['pub_ts'] === null) {
-            // Books: assign DESCENDING timestamps so that podcast apps, which
-            // always sort by pubDate newest-first, end up presenting track 1
-            // first (highest timestamp) and the last track last.
-            // Podcasts: ascending timestamps keep the oldest episode oldest.
-            $f['pub_ts'] = $type === 'book'
-                ? $syntheticBase + ($fileCount - 1 - $i) * $syntheticStep
-                : $syntheticBase + $i * $syntheticStep;
+        if ($f['pub_ts'] === null && $type === 'book') {
+            // Assign DESCENDING timestamps so that podcast apps, which always
+            // sort by pubDate newest-first, present track 1 first.
+            $f['pub_ts'] = $syntheticBase + ($fileCount - 1 - $i) * $syntheticStep;
             $f['sort_ts'] = $f['pub_ts'];
         }
     }
@@ -192,7 +192,13 @@ function find_media_files(string $feedDir, string $type = 'podcast'): array {
 
     // Books: keep ascending filename order. Podcasts: newest first.
     if ($type !== 'book') {
-        usort($files, fn($a, $b) => $b['sort_ts'] <=> $a['sort_ts']);
+        usort($files, static function (array $a, array $b): int {
+            $cmp = $b['sort_ts'] <=> $a['sort_ts'];
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            return strnatcasecmp($a['rel'], $b['rel']);
+        });
     }
 
     return $files;
