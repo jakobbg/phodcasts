@@ -4,7 +4,7 @@ declare(strict_types=1);
 // ── Internal app metadata (not user-configurable) ────────────────────────────
 const MAX_ITEMS   = 200;
 const APP_NAME    = 'fablr';
-const APP_VERSION = 'v1.8.1';
+const APP_VERSION = 'v1.8.2';
 const REPO_URL    = 'https://github.com/jakobbg/fablr';
 const APP_QUIP    = 'Fables on demand — Your audio, your schedule';
 

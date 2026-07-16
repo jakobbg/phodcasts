@@ -297,6 +297,15 @@ function can_defer_book_archive_build(): bool {
     return function_exists('fastcgi_finish_request') || function_exists('litespeed_finish_request');
 }
 
+function should_defer_book_archive_response(): bool {
+    // Requests that explicitly carry a download nonce are real download starts
+    // from the UI and must never bounce back into the preparing page.
+    if (isset($_GET['dl_nonce']) && trim((string)$_GET['dl_nonce']) !== '') {
+        return false;
+    }
+    return can_defer_book_archive_build();
+}
+
 function resolve_book_archive_return_url(string $feed): string {
     $fallback = show_url($feed);
     $raw = trim((string)($_GET['return_to'] ?? ''));
@@ -367,9 +376,12 @@ function send_book_archive_preparing_page(string $feed, string $returnUrl): void
         . 'setText("Archive ready. Starting download...");'
         . 'var frame=document.getElementById("book-download-frame");'
         . 'if(!frame){frame=document.createElement("iframe");frame.id="book-download-frame";frame.style.display="none";document.body.appendChild(frame);}'
+        . 'var redirected=false;'
+        . 'function goBack(){if(redirected){return;}redirected=true;window.location.href=returnUrl;}'
+        . 'frame.onload=goBack;'
         . 'var sep=downloadUrl.indexOf("?")===-1?"?":"&";'
         . 'frame.src=downloadUrl+sep+"dl_nonce="+Date.now();'
-        . 'setTimeout(function(){window.location.href=returnUrl;},1400);'
+        . 'setTimeout(goBack,20000);'
         . '}'
         . 'function check(){'
         . 'fetch(statusUrl,{cache:"no-store"}).then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){'
@@ -616,7 +628,7 @@ function send_book_archive(string $feed): void {
 
         $isFresh = is_book_archive_fresh($archivePath, $metaPath, $fingerprint);
         if (!$isFresh) {
-            if (can_defer_book_archive_build()) {
+            if (should_defer_book_archive_response()) {
                 ignore_user_abort(true);
                 send_book_archive_preparing_page($feed, $returnUrl);
                 finish_book_archive_response();
