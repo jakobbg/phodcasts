@@ -31,12 +31,15 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     send_security_headers('rss');
 
     // Build feed description: user notes (highest priority) → Open Library → default.
-    $feedDesc = "Podcast feed for {$name}";
+    $feedDesc     = "Podcast feed for {$name}";
+    $feedDescHtml = null; // HTML version for <description>; null = fall back to plain text.
 
     $notesFound = load_feed_notes($feed, $feedDir);
 
     if ($notesFound !== null) {
-        // Strip common Markdown syntax to produce clean plain text for RSS.
+        // HTML for <description>: Apple Podcasts renders basic HTML inside CDATA.
+        $feedDescHtml = render_markdown($notesFound);
+        // Plain text for <itunes:summary>/<itunes:subtitle>: strip Markdown syntax.
         $plain = preg_replace('/^#{1,6}\s+/m', '', $notesFound);
         $plain = preg_replace('/\[([^\]]+)\]\([^)]+\)/', '$1', $plain);
         $plain = preg_replace('/[*_`~>]+/', '', $plain);
@@ -55,14 +58,22 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     if (stripos($feedDesc, APP_QUIP) === false && stripos($feedDesc, $rssQuip) === false) {
         $feedDesc = rtrim($feedDesc, ". \t\n\r\0\x0B") . '. ' . $rssQuip;
     }
+    if ($feedDescHtml !== null && stripos($feedDescHtml, APP_QUIP) === false) {
+        $feedDescHtml = rtrim($feedDescHtml) . "\n<p>" . h($rssQuip) . "</p>\n";
+    }
     $feedSubtitle = mb_substr($feedDesc, 0, 255, 'UTF-8');
+
+    // Apple Podcasts requires description fields to be wrapped in CDATA to display
+    // correctly. Entity-encoded text (htmlspecialchars) is valid XML but is silently
+    // dropped by Apple Podcasts. Escapes any literal "]]>" to keep CDATA well-formed.
+    $cdata = static fn(string $s): string => '<![CDATA[' . str_replace(']]>', ']]]]><![CDATA[>', $s) . ']]>';
 
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     echo "<rss version=\"2.0\" xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n";
     echo "  <channel>\n";
     echo "    <title>" . h($name) . "</title>\n";
     echo "    <link>" . h($base) . "</link>\n";
-    echo "    <description>" . h($feedDesc) . "</description>\n";
+    echo "    <description>" . $cdata($feedDescHtml ?? $feedDesc) . "</description>\n";
     echo "    <language>" . h(FEED_LANGUAGE) . "</language>\n";
     echo "    <lastBuildDate>" . gmdate(DATE_RSS, $lastBuild) . "</lastBuildDate>\n";
     echo "    <generator>" . h(APP_NAME) . " " . h(APP_VERSION) . "</generator>\n";
@@ -71,8 +82,8 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
     echo "    <itunes:author>" . h($name) . "</itunes:author>\n";
     echo "    <itunes:explicit>false</itunes:explicit>\n";
     echo "    <itunes:category text=\"" . h($type === 'book' ? 'Fiction' : 'Society &amp; Culture') . "\" />\n";
-    echo "    <itunes:subtitle>" . h($feedSubtitle) . "</itunes:subtitle>\n";
-    echo "    <itunes:summary>" . h($feedDesc) . "</itunes:summary>\n";
+    echo "    <itunes:subtitle>" . $cdata($feedSubtitle) . "</itunes:subtitle>\n";
+    echo "    <itunes:summary>" . $cdata($feedDesc) . "</itunes:summary>\n";
     if ($imgUrl !== null) {
         // Standard RSS image block
         echo "    <image>\n";
@@ -104,9 +115,9 @@ function send_rss(string $feed, string $feedDir, string $type = 'podcast'): void
         echo "      <pubDate>" . gmdate(DATE_RSS, $pubTs) . "</pubDate>\n";
         echo "      <guid isPermaLink=\"false\">" . h($guid) . "</guid>\n";
         echo "      <link>" . h($enclosure) . "</link>\n";
-        echo "      <description>" . h($itemSummary) . "</description>\n";
+        echo "      <description>" . $cdata($itemSummary) . "</description>\n";
         echo "      <itunes:title>" . h($title) . "</itunes:title>\n";
-        echo "      <itunes:summary>" . h($itemSummary) . "</itunes:summary>\n";
+        echo "      <itunes:summary>" . $cdata($itemSummary) . "</itunes:summary>\n";
         echo "      <itunes:explicit>false</itunes:explicit>\n";
         if ($imgUrl !== null) {
             echo "      <itunes:image href=\"" . h($imgUrl) . "\" />\n";

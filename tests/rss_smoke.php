@@ -54,15 +54,19 @@ try {
     send_rss('Podcasts/Smoke Feed', $feedDir, 'podcast');
     $xml = (string)ob_get_clean();
 
-    $expectedDesc = 'Custom smoke description. ' . APP_NAME . ': ' . APP_QUIP;
+    $rssQuip     = APP_NAME . ': ' . APP_QUIP;
+    $expectedDesc = 'Custom smoke description. ' . $rssQuip;
+    // Channel <description> uses rendered HTML inside CDATA.
+    $expectedDescHtml = rtrim(render_markdown('Custom smoke description')) . "\n<p>" . h($rssQuip) . "</p>\n";
+    $cdataWrap = static fn(string $s): string => '<![CDATA[' . str_replace(']]>', ']]]]><![CDATA[>', $s) . ']]>';
 
-    $assertContains('channel description carries editable description', $xml, '<description>' . h($expectedDesc) . '</description>');
-    $assertContains('channel itunes subtitle mirrors description', $xml, '<itunes:subtitle>' . h($expectedDesc) . '</itunes:subtitle>');
-    $assertContains('channel itunes summary mirrors description', $xml, '<itunes:summary>' . h($expectedDesc) . '</itunes:summary>');
+    $assertContains('channel description carries HTML in CDATA', $xml, '<description>' . $cdataWrap($expectedDescHtml) . '</description>');
+    $assertContains('channel itunes subtitle is plain text in CDATA', $xml, '<itunes:subtitle>' . $cdataWrap(mb_substr($expectedDesc, 0, 255, 'UTF-8')) . '</itunes:subtitle>');
+    $assertContains('channel itunes summary is plain text in CDATA', $xml, '<itunes:summary>' . $cdataWrap($expectedDesc) . '</itunes:summary>');
     $assertContains('generator uses app name and version', $xml, '<generator>' . h(APP_NAME) . ' ' . h(APP_VERSION) . '</generator>');
 
-    $assertContains('item itunes summary uses Added <date>', $xml, '<itunes:summary>' . h($expectedItemSummary) . '</itunes:summary>');
-    $assertContains('item description uses Added <date>', $xml, '<description>' . h($expectedItemSummary) . '</description>');
+    $assertContains('item itunes summary uses Added date in CDATA', $xml, '<itunes:summary>' . $cdataWrap($expectedItemSummary) . '</itunes:summary>');
+    $assertContains('item description uses Added date in CDATA', $xml, '<description>' . $cdataWrap($expectedItemSummary) . '</description>');
 } finally {
     $rmTree($tmpRoot);
 }
