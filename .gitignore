@@ -11,7 +11,7 @@ config/config.json
 
 # Local IDE metadata.
 .idea/
-.junie
+.junie/
 
 # macOS filesystem metadata.
 **/.DS_Store
