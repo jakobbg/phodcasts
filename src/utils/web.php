@@ -166,7 +166,7 @@ function use_clean_urls(): bool {
  * Generate a URL to the show details page.
  */
 function show_url(string $feedId, array $backParams = []): string {
-    $base = app_base_path();
+    $base = base_url();
 
     if (use_clean_urls()) {
         $encodedId = implode('/', array_map('rawurlencode', explode('/', $feedId)));

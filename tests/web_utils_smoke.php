@@ -100,12 +100,12 @@ try {
         'SCRIPT_NAME' => '/index.php',
         'REQUEST_URI' => '/index.php',
     ];
-    $assertSame('show_url uses fallback when index.php in URI', show_url('Podcasts/Show'), '/index.php?show=Podcasts%2FShow');
-    $assertSame('show_url with back params', show_url('Podcasts/Show', ['q' => 'test']), '/index.php?show=Podcasts%2FShow&return_to=%2Findex.php%3Fq%3Dtest');
+    $assertSame('show_url uses fallback when index.php in URI', show_url('Podcasts/Show'), 'http://pod.local/index.php?show=Podcasts%2FShow');
+    $assertSame('show_url with back params', show_url('Podcasts/Show', ['q' => 'test']), 'http://pod.local/index.php?show=Podcasts%2FShow&return_to=%2Findex.php%3Fq%3Dtest');
     $shareUrl = show_share_url('Podcasts/Show');
     $shareQuery = (string)parse_url($shareUrl, PHP_URL_QUERY);
     parse_str($shareQuery, $shareParams);
-    $assertSame('show_share_url base path uses show route', str_starts_with($shareUrl, '/index.php?show=Podcasts%2FShow&'), true);
+    $assertSame('show_share_url base path uses show route', str_starts_with($shareUrl, 'http://pod.local/index.php?show=Podcasts%2FShow&'), true);
     $assertSame('show_share_url sets share_exp', isset($shareParams['share_exp']), true);
     $assertSame('show_share_url sets share_sig', isset($shareParams['share_sig']), true);
 
@@ -146,7 +146,7 @@ try {
             'SCRIPT_NAME' => '/index.php',
             'REQUEST_URI' => '/',
         ];
-        $assertSame('show_url stays on fallback for ambiguous URI without proof', show_url('Podcasts/Show'), '/index.php?show=Podcasts%2FShow');
+        $assertSame('show_url stays on fallback for ambiguous URI without proof', show_url('Podcasts/Show'), 'http://pod.local/index.php?show=Podcasts%2FShow');
         $assertSame('feed_url stays on fallback for ambiguous URI without proof', feed_url('Podcasts/Show'), 'http://pod.local/index.php?feed=Podcasts%2FShow');
         $assertSame('no proof recorded yet', is_file($flagPath), false);
 
@@ -166,7 +166,7 @@ try {
             'SCRIPT_NAME' => '/index.php',
             'REQUEST_URI' => '/',
         ];
-        $assertSame('show_url uses clean path once rewriting is confirmed', show_url('Podcasts/Show'), '/show/Podcasts/Show');
+        $assertSame('show_url uses clean path once rewriting is confirmed', show_url('Podcasts/Show'), 'http://pod.local/show/Podcasts/Show');
         $assertSame('feed_url uses clean path once rewriting is confirmed', feed_url('Podcasts/Show'), 'http://pod.local/feed/Podcasts/Show');
     } finally {
         @unlink($flagPath);
@@ -284,7 +284,7 @@ try {
         $assertSame(
             'show_url uses subdirectory fallback when index.php in URI',
             show_url('Podcasts/Show'),
-            '/fablr/index.php?show=Podcasts%2FShow'
+            'http://pod.local/fablr/index.php?show=Podcasts%2FShow'
         );
 
         // A rewritten request under the subdirectory is still direct proof.
@@ -304,7 +304,7 @@ try {
         $assertSame(
             'show_url uses subdirectory clean path once rewriting is confirmed',
             show_url('Podcasts/Show'),
-            '/fablr/show/Podcasts/Show'
+            'http://pod.local/fablr/show/Podcasts/Show'
         );
         $assertSame(
             'feed_url uses subdirectory clean path once rewriting is confirmed',
