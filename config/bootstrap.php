@@ -20,5 +20,6 @@ require_once __DIR__ . '/../src/handlers/assets.php';
 require_once __DIR__ . '/../src/handlers/metadatajson.php';
 require_once __DIR__ . '/../src/handlers/savenotes.php';
 require_once __DIR__ . '/../src/handlers/bookarchive.php';
+require_once __DIR__ . '/../src/handlers/subscribehelp.php';
 require_once __DIR__ . '/../src/handlers/showpage.php';
 require_once __DIR__ . '/../src/handlers/indexpage.php';

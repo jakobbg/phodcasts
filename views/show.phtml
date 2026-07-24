@@ -527,7 +527,10 @@
 
       <?php
         $rssUrl = feed_url($feed);
-        $podcastUrl = preg_replace('#^https?://#i', 'podcast://', feed_url($feed, true));
+        $subscribeUrl = subscribe_url_for_request($feed);
+        $isAppleClient = is_apple_platform_client();
+        $subscribeLabel = $isAppleClient ? 'Subscribe in Apple Podcasts' : 'Subscribe';
+        $subscribeHelpUrl = subscribe_help_url($feed, (string)($_SERVER['REQUEST_URI'] ?? ''));
       ?>
       <div class="hero-actions">
         <button type="button" class="btn" onclick="copyFeed(this,'<?= h(addslashes($rssUrl)) ?>')" aria-label="Copy RSS feed URL">Copy RSS</button>
@@ -539,7 +542,11 @@
           aria-label="Download full audiobook archive for <?= h($displayTitle) ?>"
           onclick="return startBookDownload(event,this)">Download Book</a>
         <?php endif; ?>
-        <a href="<?= h($podcastUrl) ?>" class="btn primary" aria-label="Subscribe to <?= h($displayTitle) ?>">Subscribe</a>
+        <a href="<?= h($subscribeUrl) ?>" class="btn primary" aria-label="Subscribe to <?= h($displayTitle) ?>"><?= h($subscribeLabel) ?></a>
+        <a href="<?= h($subscribeHelpUrl) ?>" class="btn" aria-label="Subscribe troubleshooting for <?= h($displayTitle) ?>">Subscribe help</a>
+        <?php if ($isAppleClient): ?>
+        <p class="subscribe-hint">If this opens empty, use <a href="<?= h($subscribeHelpUrl) ?>">Subscribe help</a>.</p>
+        <?php endif; ?>
       </div>
     </div>
   </div>

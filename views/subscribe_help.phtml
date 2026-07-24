@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title><?= h('Subscribe help · ' . $displayTitle . ' · ' . APP_NAME) ?></title>
+
+  <link rel="icon" type="image/png" href="<?= h($assetBase . 'favicon.png') ?>">
+  <link rel="apple-touch-icon" href="<?= h($assetBase . 'apple-touch-icon.png') ?>">
+
+  <style>
+  :root {
+    --bg: #0b1220;
+    --bg2: #0d1b2e;
+    --ink: rgba(255,255,255,.92);
+    --muted: rgba(255,255,255,.70);
+    --card: rgba(255,255,255,.08);
+    --cardBorder: rgba(255,255,255,.16);
+    --shadow: rgba(0,0,0,.32);
+    --accentA: #7c3aed;
+    --accentB: #06b6d4;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, Arial, sans-serif;
+    --font-serif: ui-serif, "New York", "Palatino Linotype", Georgia, serif;
+  }
+
+  @media (prefers-color-scheme: light) {
+    html {
+      --bg: #f6f7fb;
+      --bg2: #eaf3ff;
+      --ink: rgba(15,23,42,.92);
+      --muted: rgba(15,23,42,.66);
+      --card: rgba(255,255,255,.78);
+      --cardBorder: rgba(15,23,42,.14);
+      --shadow: rgba(15,23,42,.15);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { min-height: 100%; margin: 0; }
+  body {
+    font-family: var(--font-sans);
+    color: var(--ink);
+    background:
+      radial-gradient(1000px 440px at 4% 8%, rgba(124,58,237,.34), transparent 64%),
+      radial-gradient(980px 440px at 95% 2%, rgba(6,182,212,.27), transparent 62%),
+      linear-gradient(180deg, var(--bg), var(--bg2));
+    background-attachment: fixed;
+    padding: 24px;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .back {
+    display: inline-flex;
+    margin-bottom: 14px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .back:hover { color: var(--ink); }
+
+  .card {
+    border: 1px solid var(--cardBorder);
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: 0 20px 64px var(--shadow);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+  }
+
+  .head { padding: 22px 24px 10px; }
+  .kicker {
+    font-size: 11px;
+    letter-spacing: .45px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(24px, 4vw, 32px);
+    font-family: var(--font-serif);
+  }
+  .sub {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .body { padding: 8px 24px 24px; }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 12px 0 18px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid var(--cardBorder);
+    background: rgba(255,255,255,.08);
+    color: var(--ink);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .btn.primary {
+    border-color: rgba(124,58,237,.55);
+    color: #fff;
+    background: linear-gradient(135deg, rgba(124,58,237,.94), rgba(6,182,212,.74));
+  }
+
+  ol {
+    margin: 0;
+    padding-left: 20px;
+    line-height: 1.65;
+    font-size: 14px;
+  }
+
+  .feed-box {
+    margin-top: 14px;
+    border: 1px solid var(--cardBorder);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgba(0,0,0,.18);
+    word-break: break-all;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+  @media (prefers-color-scheme: light) {
+    html .feed-box { background: rgba(15,23,42,.06); }
+  }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="<?= h($backUrl) ?>" class="back">&larr; Back to show</a>
+
+    <main class="card" aria-labelledby="help-title">
+      <header class="head">
+        <p class="kicker"><?= h($feedType === 'book' ? 'Audiobook' : 'Podcast') ?> subscribe troubleshooting</p>
+        <h1 id="help-title">Subscribe to <?= h($displayTitle) ?></h1>
+        <p class="sub">If the app opens with an empty field, use the direct feed URL below.</p>
+      </header>
+
+      <div class="body">
+        <div class="actions">
+          <a class="btn primary" href="<?= h($appleUrl) ?>">Open in Apple Podcasts</a>
+          <a class="btn" href="<?= h($rssUrl) ?>">Open feed URL</a>
+        </div>
+
+        <ol>
+          <li>Open Apple Podcasts.</li>
+          <li>Use the menu option to follow/add a show by URL (wording varies by version).</li>
+          <li>Paste this feed URL:</li>
+        </ol>
+
+        <div class="feed-box" aria-label="Feed URL"><?= h($rssUrl) ?></div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

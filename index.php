@@ -65,6 +65,11 @@ if ($action === 'book_archive_status') {
     exit;
 }
 
+if ($action === 'subscribe_help') {
+    render_subscribe_help_page($feed);
+    exit;
+}
+
 if ($feed !== '') {
     $feedDir = resolve_feed_dir($feed);
     if ($feedDir === null) {

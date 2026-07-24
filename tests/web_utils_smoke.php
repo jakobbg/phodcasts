@@ -266,6 +266,50 @@ try {
         'http://pod.local/feed/Podcasts/Show'
     );
 
+    $assertSame(
+        'is_apple_platform_client returns true for macOS user agents',
+        is_apple_platform_client('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'),
+        true
+    );
+    $assertSame(
+        'is_apple_platform_client returns true for iPhone user agents',
+        is_apple_platform_client('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'),
+        true
+    );
+    $assertSame(
+        'is_apple_platform_client returns false for non-Apple user agents',
+        is_apple_platform_client('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0 Safari/537.36'),
+        false
+    );
+
+    $assertSame(
+        'apple_podcasts_url uses podcast scheme and keeps clean encoded feed path',
+        apple_podcasts_url('Podcasts/My Show'),
+        'podcast://pod.local/feed/Podcasts/My%20Show'
+    );
+
+    $assertSame(
+        'subscribe_url_for_request returns podcast scheme for Apple clients',
+        subscribe_url_for_request('Podcasts/My Show', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)'),
+        'podcast://pod.local/feed/Podcasts/My%20Show'
+    );
+    $assertSame(
+        'subscribe_url_for_request returns plain feed URL for non-Apple clients',
+        subscribe_url_for_request('Podcasts/My Show', 'Mozilla/5.0 (X11; Linux x86_64)'),
+        'http://pod.local/feed/Podcasts/My%20Show'
+    );
+
+    $assertSame(
+        'subscribe_help_url builds action URL',
+        subscribe_help_url('Podcasts/Show'),
+        '/index.php?action=subscribe_help&feed=Podcasts%2FShow'
+    );
+    $assertSame(
+        'subscribe_help_url preserves optional return_to path',
+        subscribe_help_url('Podcasts/Show', '/show/Podcasts/Show?share_exp=1&share_sig=abc'),
+        '/index.php?action=subscribe_help&feed=Podcasts%2FShow&return_to=%2Fshow%2FPodcasts%2FShow%3Fshare_exp%3D1%26share_sig%3Dabc'
+    );
+
     // --- Subdirectory install coverage ---
     // Apps hosted under a subpath (e.g. http://host/fablr/) must keep clean
     // URL detection and generation correctly scoped to that subpath.

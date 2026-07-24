@@ -271,6 +271,52 @@ function feed_url(string $feedId, bool $cleanOnly = false): string {
     return $base . 'index.php?feed=' . rawurlencode($feedId);
 }
 
+/**
+ * Best-effort detection for Apple platforms where the `podcast://` scheme is
+ * expected to open Apple Podcasts.
+ */
+function is_apple_platform_client(?string $userAgent = null): bool {
+    $ua = $userAgent ?? (string)($_SERVER['HTTP_USER_AGENT'] ?? '');
+    if (trim($ua) === '') {
+        return false;
+    }
+    return preg_match('/\b(Macintosh|iPhone|iPad|iPod)\b/i', $ua) === 1;
+}
+
+/**
+ * Apple Podcasts deep link for a feed. We start from a clean path-based feed
+ * URL (no query string) and only swap the scheme.
+ */
+function apple_podcasts_url(string $feedId): string {
+    $cleanFeed = feed_url($feedId, true);
+    return preg_replace('#^https?://#i', 'podcast://', $cleanFeed) ?? $cleanFeed;
+}
+
+/**
+ * Client-aware subscribe URL: Apple clients get podcast://; everyone else gets
+ * a plain HTTPS/HTTP feed URL that opens in normal podcast readers.
+ */
+function subscribe_url_for_request(string $feedId, ?string $userAgent = null): string {
+    if (is_apple_platform_client($userAgent)) {
+        return apple_podcasts_url($feedId);
+    }
+    return feed_url($feedId, true);
+}
+
+/**
+ * URL for a no-JS subscribe troubleshooting page.
+ */
+function subscribe_help_url(string $feedId, string $returnTo = ''): string {
+    $params = [
+        'action' => 'subscribe_help',
+        'feed' => $feedId,
+    ];
+    if ($returnTo !== '') {
+        $params['return_to'] = $returnTo;
+    }
+    return app_base_path() . 'index.php?' . http_build_query($params);
+}
+
 function h(string $s): string {
     return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
